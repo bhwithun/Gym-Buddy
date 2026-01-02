@@ -24,13 +24,13 @@ class DayAdapter(private val days: List<RoutineDayEntity>, private val onDayClic
         holder.binding.dayName.text = dayNames[day.dayOfWeek - 1]
 
         val exercises: List<Exercise> = gson.fromJson(day.exercisesJson, object : TypeToken<List<Exercise>>() {}.type)
-        if (day.isRest || exercises.isEmpty()) {
-            holder.binding.exerciseCount.text = ""
-            holder.binding.restIndicator.visibility = android.view.View.VISIBLE
+        if (day.isRest) {
+            holder.binding.exerciseCount.text = "Rest Day"
         } else {
-            holder.binding.exerciseCount.text = "${exercises.size} exercises"
-            holder.binding.restIndicator.visibility = android.view.View.GONE
+            val titles = exercises.map { "• ${it.title}" }
+            holder.binding.exerciseCount.text = titles.joinToString("\n")
         }
+        holder.binding.restIndicator.visibility = android.view.View.GONE
 
         holder.itemView.setOnClickListener { onDayClick(day) }
     }
