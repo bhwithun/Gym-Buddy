@@ -23,4 +23,7 @@
     <color name="surfaceVariant">#2A2A2A</color>
     <color name="onSurfaceVariant">#BDBDBD</color>
     <color name="outline">#979797</color>
+    <color name="weight_color">#00FFFF</color>
+    <color name="reps_color">#F1C40F</color>
+    <color name="sets_color">#00FF00</color>
 </resources>

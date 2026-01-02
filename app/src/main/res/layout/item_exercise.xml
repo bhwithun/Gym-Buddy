@@ -18,14 +18,28 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/details_text"
+        android:id="@+id/weight_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="45 lbs | 12 x 4"
+        android:layout_marginEnd="8dp"
+        android:text="45 lbs"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:textColor="@color/weight_color"
+        app:layout_constraintEnd_toStartOf="@+id/reps_sets_text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/title_text" />
+
+    <TextView
+        android:id="@+id/reps_sets_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
+        android:text="12 x 4"
         android:textAppearance="?attr/textAppearanceBodyLarge"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/weight_text"
         app:layout_constraintTop_toBottomOf="@+id/title_text" />
 
     <TextView
@@ -37,6 +51,6 @@
         android:textAppearance="?attr/textAppearanceBodyMedium"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/details_text" />
+        app:layout_constraintTop_toBottomOf="@+id/weight_text" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -19,7 +19,9 @@ class ProgressPieChart @JvmOverloads constructor(
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val checkPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private var progress = 0f // 0.0 to 1.0
+    private var completed = 0
+    private var total = 1
+    private var isSegmented = false
 
     init {
         paint.style = Paint.Style.STROKE
@@ -32,8 +34,14 @@ class ProgressPieChart @JvmOverloads constructor(
         checkPaint.strokeCap = Paint.Cap.ROUND
     }
 
-    fun setProgress(value: Float) {
-        progress = value.coerceIn(0f, 1f)
+    fun setProgress(completedSets: Int, totalSets: Int) {
+        completed = completedSets
+        total = totalSets.coerceAtLeast(1)
+        invalidate()
+    }
+
+    fun setSegmented(segmented: Boolean) {
+        isSegmented = segmented
         invalidate()
     }
 
@@ -54,7 +62,7 @@ class ProgressPieChart @JvmOverloads constructor(
         paint.style = Paint.Style.STROKE
         canvas.drawCircle(centerX, centerY, radius, paint)
 
-        if (progress >= 1f) {
+        if (completed >= total) {
             // Draw solid pale green
             paint.color = Color.parseColor("#80FF80") // pale green
             paint.style = Paint.Style.FILL
@@ -67,21 +75,42 @@ class ProgressPieChart @JvmOverloads constructor(
             checkPath.lineTo(centerX - checkSize * 0.1f, centerY + checkSize * 0.2f)
             checkPath.lineTo(centerX + checkSize * 0.3f, centerY - checkSize * 0.2f)
             canvas.drawPath(checkPath, checkPaint)
-        } else if (progress > 0f) {
-            // Draw progress arc
-            paint.color = Color.parseColor("#80FF80") // pale green
+        } else if (isSegmented) {
+            // Draw segmented pie
             paint.style = Paint.Style.FILL
-            val sweepAngle = progress * 360f
-            canvas.drawArc(
-                centerX - radius + paint.strokeWidth,
-                centerY - radius + paint.strokeWidth,
-                centerX + radius - paint.strokeWidth,
-                centerY + radius - paint.strokeWidth,
-                -90f,
-                sweepAngle,
-                true,
-                paint
-            )
+            val anglePerSegment = 360f / total
+            for (i in 0 until total) {
+                val startAngle = -90f + i * anglePerSegment
+                paint.color = if (i < completed) Color.parseColor("#00FF00") else Color.parseColor("#424242") // dark gray
+                canvas.drawArc(
+                    centerX - radius + paint.strokeWidth,
+                    centerY - radius + paint.strokeWidth,
+                    centerX + radius - paint.strokeWidth,
+                    centerY + radius - paint.strokeWidth,
+                    startAngle,
+                    anglePerSegment,
+                    true,
+                    paint
+                )
+            }
+        } else {
+            // Draw progress arc
+            val progress = completed.toFloat() / total
+            if (progress > 0f) {
+                paint.color = Color.parseColor("#80FF80") // pale green
+                paint.style = Paint.Style.FILL
+                val sweepAngle = progress * 360f
+                canvas.drawArc(
+                    centerX - radius + paint.strokeWidth,
+                    centerY - radius + paint.strokeWidth,
+                    centerX + radius - paint.strokeWidth,
+                    centerY + radius - paint.strokeWidth,
+                    -90f,
+                    sweepAngle,
+                    true,
+                    paint
+                )
+            }
         }
     }
 }

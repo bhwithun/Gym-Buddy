@@ -29,8 +29,9 @@
         android:textStyle="bold"
         android:textColor="#00FFFF"
         android:layout_marginTop="32dp"
+        android:layout_marginEnd="16dp"
         android:gravity="center"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/titleText"
         tools:text="Weight: 45" />
@@ -43,8 +44,9 @@
         android:textStyle="bold"
         android:textColor="#FFFF00"
         android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
         android:gravity="center"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/weightText"
         tools:text="Reps: 8" />
@@ -57,8 +59,9 @@
         android:textStyle="bold"
         android:textColor="#00FF00"
         android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
         android:gravity="center"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/repsText"
         tools:text="Sets: 4" />
@@ -87,12 +90,12 @@
 
     <com.gymbuddy.ProgressPieChart
         android:id="@+id/progressPieChart"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_marginTop="32dp"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginStart="16dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/completeSetButton" />
+        app:layout_constraintTop_toTopOf="@+id/weightText"
+        app:layout_constraintBottom_toBottomOf="@+id/setsText" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

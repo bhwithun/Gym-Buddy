@@ -1,5 +1,6 @@
 package com.gymbuddy
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -50,7 +51,13 @@ class DaySummaryPageFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.dateText.text = date
+        val calendar = Calendar.getInstance()
+        calendar.time = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(date) ?: Date()
+        val dayName = SimpleDateFormat("EEEE", Locale.getDefault()).format(calendar.time)
+        val monthName = SimpleDateFormat("MMM", Locale.getDefault()).format(calendar.time)
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val year = calendar.get(Calendar.YEAR)
+        binding.dateText.text = "$dayName $monthName $day, $year"
         binding.exercisesRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         loadDaySummary()
@@ -67,7 +74,6 @@ class DaySummaryPageFragment : Fragment() {
             }
 
             if (routineDay == null || routineDay.isRest) {
-                binding.statusText.text = "Rest Day"
                 binding.exercisesRecyclerView.adapter = ExerciseSummaryAdapter(emptyList(), emptyList())
             } else {
                 val log = withContext(Dispatchers.IO) {
@@ -81,7 +87,6 @@ class DaySummaryPageFragment : Fragment() {
                     emptyList()
                 }
 
-                binding.statusText.text = if (performedExercises.isNotEmpty()) "Performed" else "Planned"
                 binding.exercisesRecyclerView.adapter = ExerciseSummaryAdapter(plannedExercises, performedExercises)
             }
         }
@@ -112,11 +117,13 @@ class DaySummaryPageFragment : Fragment() {
             val plannedExercise = planned.getOrNull(position)
             val performedExercise = performed.find { it.title == plannedExercise?.title }
 
-            holder.plannedText.text = plannedExercise?.let { "${it.title}: ${it.weight} x ${it.sets} sets" } ?: ""
-            holder.performedText.text = performedExercise?.let { "Completed: ${it.completedSets}/${it.sets} sets" } ?: "Not performed"
+            holder.plannedText.text = plannedExercise?.title ?: ""
+            val completed = performedExercise?.completedSets ?: 0
+            val total = performedExercise?.sets ?: plannedExercise?.sets ?: 0
+            holder.performedText.text = "Completed $completed of $total sets"
+            holder.performedText.setTextColor(Color.WHITE)
 
-            val progress = performedExercise?.let { it.completedSets.toFloat() / it.sets } ?: 0f
-            holder.progressPieChart.setProgress(progress)
+            holder.progressPieChart.setProgress(completed, total)
         }
 
         override fun getItemCount() = planned.size

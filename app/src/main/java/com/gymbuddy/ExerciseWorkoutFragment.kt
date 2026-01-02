@@ -87,8 +87,8 @@ class ExerciseWorkoutFragment : Fragment() {
         binding.setsText.text = "Sets: ${exercise.sets}"
         binding.notesText.text = if (exercise.notes.isNotBlank()) "Notes: ${exercise.notes}" else ""
 
-        val progress = exercise.completedSets.toFloat() / exercise.sets
-        binding.progressPieChart.setProgress(progress)
+        binding.progressPieChart.setProgress(exercise.completedSets, exercise.sets)
+        binding.progressPieChart.setSegmented(true)
 
         if (exercise.completedSets < exercise.sets) {
             binding.completeSetButton.text = "Complete Set ${exercise.completedSets + 1} of ${exercise.sets}"
