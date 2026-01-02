@@ -1,7 +1,10 @@
 package com.gymbuddy
 
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -61,6 +64,14 @@ class ExerciseWorkoutFragment : Fragment() {
 
         binding.completeSetButton.setOnClickListener {
             if (exercise.completedSets < exercise.sets) {
+                // Haptic feedback
+                val vibrator = requireContext().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+                } else {
+                    vibrator.vibrate(50)
+                }
+
                 exercise.completedSets++
                 updateUI()
                 onUpdate(exercise)
@@ -75,6 +86,9 @@ class ExerciseWorkoutFragment : Fragment() {
         binding.repsText.text = "Reps: ${exercise.reps}"
         binding.setsText.text = "Sets: ${exercise.sets}"
         binding.notesText.text = if (exercise.notes.isNotBlank()) "Notes: ${exercise.notes}" else ""
+
+        val progress = exercise.completedSets.toFloat() / exercise.sets
+        binding.progressPieChart.setProgress(progress)
 
         if (exercise.completedSets < exercise.sets) {
             binding.completeSetButton.text = "Complete Set ${exercise.completedSets + 1} of ${exercise.sets}"

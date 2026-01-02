@@ -100,6 +100,7 @@ class DaySummaryPageFragment : Fragment() {
         class ExerciseViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
             val plannedText: android.widget.TextView = itemView.findViewById(R.id.plannedText)
             val performedText: android.widget.TextView = itemView.findViewById(R.id.performedText)
+            val progressPieChart: ProgressPieChart = itemView.findViewById(R.id.progressPieChart)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ExerciseViewHolder {
@@ -113,6 +114,9 @@ class DaySummaryPageFragment : Fragment() {
 
             holder.plannedText.text = plannedExercise?.let { "${it.title}: ${it.weight} x ${it.sets} sets" } ?: ""
             holder.performedText.text = performedExercise?.let { "Completed: ${it.completedSets}/${it.sets} sets" } ?: "Not performed"
+
+            val progress = performedExercise?.let { it.completedSets.toFloat() / it.sets } ?: 0f
+            holder.progressPieChart.setProgress(progress)
         }
 
         override fun getItemCount() = planned.size

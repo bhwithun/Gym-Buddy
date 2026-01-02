@@ -5,14 +5,16 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/item_border"
     android:padding="32dp">
 
     <TextView
         android:id="@+id/titleText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="32sp"
+        android:textSize="36sp"
         android:textStyle="bold"
+        android:textColor="#FFFFFF"
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -23,7 +25,9 @@
         android:id="@+id/weightText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="24sp"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#00FFFF"
         android:layout_marginTop="32dp"
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
@@ -35,7 +39,9 @@
         android:id="@+id/repsText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="24sp"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#FFFF00"
         android:layout_marginTop="16dp"
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
@@ -47,7 +53,9 @@
         android:id="@+id/setsText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="24sp"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#00FF00"
         android:layout_marginTop="16dp"
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
@@ -76,6 +84,15 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/notesText" />
+
+    <com.gymbuddy.ProgressPieChart
+        android:id="@+id/progressPieChart"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="32dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/completeSetButton" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

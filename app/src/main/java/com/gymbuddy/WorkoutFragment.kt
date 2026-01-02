@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
 import com.gymbuddy.databinding.FragmentWorkoutBinding
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -76,6 +77,7 @@ class WorkoutFragment : Fragment() {
                     }
                 })
                 binding.viewPager.adapter = adapter
+                binding.viewPager.setPageTransformer(PageFlipPageTransformer())
             } else {
                 Toast.makeText(requireContext(), "No routine for today", Toast.LENGTH_SHORT).show()
             }
@@ -120,6 +122,14 @@ class WorkoutFragment : Fragment() {
             fragment.setOnSetCompletedListener(onSetCompleted)
             fragment.setOnUpdateListener(onUpdate)
             return fragment
+        }
+    }
+
+    private class PageFlipPageTransformer : ViewPager2.PageTransformer {
+        override fun transformPage(page: View, position: Float) {
+            val rotation = -30f * position
+            page.rotationY = rotation
+            page.alpha = 1f - Math.abs(position) * 0.5f
         }
     }
 }

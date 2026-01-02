@@ -23,9 +23,17 @@
         android:layout_marginTop="4dp"
         android:textSize="12sp"
         android:textColor="#666666"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/plannedText"
         tools:text="Completed: 3/3 sets" />
+
+    <com.gymbuddy.ProgressPieChart
+        android:id="@+id/progressPieChart"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

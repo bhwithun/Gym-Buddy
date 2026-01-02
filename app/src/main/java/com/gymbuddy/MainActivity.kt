@@ -1,6 +1,10 @@
 package com.gymbuddy
 
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -63,6 +67,14 @@ class MainActivity : AppCompatActivity(), ExerciseEditorDialogFragment.ExerciseE
         }
 
         binding.bottomNavigation.setOnItemSelectedListener { item ->
+            // Haptic feedback
+            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                vibrator.vibrate(50)
+            }
+
             when (item.itemId) {
                 R.id.navigation_home -> replaceFragment(HomeFragment())
                 R.id.navigation_routine -> replaceFragment(RoutineFragment())
