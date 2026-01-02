@@ -2,6 +2,10 @@ package com.gymbuddy
 
 import android.app.AlertDialog
 import android.app.Dialog
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -75,6 +79,40 @@ class DayDetailDialogFragment : DialogFragment(), ExerciseEditorDialogFragment.E
                 return false
             }
 
+            override fun onChildDraw(
+                c: Canvas,
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float,
+                dY: Float,
+                actionState: Int,
+                isCurrentlyActive: Boolean
+            ) {
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
+                    val itemView = viewHolder.itemView
+                    val paint = Paint()
+                    val icon = resources.getDrawable(android.R.drawable.ic_menu_close_clear_cancel, null)
+
+                    if (dX > 0) { // Swiping right
+                        // Draw red background
+                        paint.color = Color.RED
+                        val background = RectF(itemView.left.toFloat(), itemView.top.toFloat(), itemView.left + dX, itemView.bottom.toFloat())
+                        c.drawRect(background, paint)
+
+                        // Draw X icon
+                        val iconMargin = (itemView.height - icon.intrinsicHeight) / 2
+                        val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2
+                        val iconBottom = iconTop + icon.intrinsicHeight
+                        val iconLeft = itemView.left + iconMargin
+                        val iconRight = iconLeft + icon.intrinsicWidth
+                        icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+                        icon.draw(c)
+                    }
+                }
+
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            }
+
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 exercises.removeAt(position)
@@ -100,11 +138,11 @@ class DayDetailDialogFragment : DialogFragment(), ExerciseEditorDialogFragment.E
 
     private fun saveToDb() {
         lifecycleScope.launch {
-            val updatedDay = day.copy(exercises = exercises)
+            val updatedDay = day.copy(exercises = exercises, isRest = exercises.isEmpty())
             withContext(Dispatchers.IO) {
                 AppDatabase.getDatabase(requireContext()).routineDao().insertAll(updatedDay)
             }
-            (activity as? ExerciseEditorDialogFragment.ExerciseEditorListener)?.onDayUpdated(updatedDay)
+            (targetFragment as? ExerciseEditorDialogFragment.ExerciseEditorListener)?.onDayUpdated(updatedDay)
         }
     }
 
@@ -122,6 +160,7 @@ class DayDetailDialogFragment : DialogFragment(), ExerciseEditorDialogFragment.E
         if (wrapper.status == "updated") {
             exercises[wrapper.index] = wrapper.exercise
             binding.exercisesRecyclerView.adapter?.notifyItemChanged(wrapper.index)
+            saveToDb()
         }
     }
 

@@ -16,6 +16,7 @@ class ExerciseWorkoutFragment : Fragment() {
     private lateinit var exercise: Exercise
     private var position: Int = 0
     private lateinit var onSetCompleted: (Int) -> Unit
+    private lateinit var onUpdate: (Exercise) -> Unit
 
     companion object {
         private const val ARG_EXERCISE = "exercise"
@@ -33,6 +34,10 @@ class ExerciseWorkoutFragment : Fragment() {
 
     fun setOnSetCompletedListener(listener: (Int) -> Unit) {
         onSetCompleted = listener
+    }
+
+    fun setOnUpdateListener(listener: (Exercise) -> Unit) {
+        onUpdate = listener
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,6 +63,7 @@ class ExerciseWorkoutFragment : Fragment() {
             if (exercise.completedSets < exercise.sets) {
                 exercise.completedSets++
                 updateUI()
+                onUpdate(exercise)
                 onSetCompleted(position)
             }
         }

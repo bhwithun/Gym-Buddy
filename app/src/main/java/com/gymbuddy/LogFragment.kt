@@ -1,6 +1,7 @@
 package com.gymbuddy
 
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -128,7 +129,7 @@ class LogFragment : Fragment() {
             val day = days[position]
             if (day.day == 0) {
                 holder.binding.dayNumberText.text = ""
-                holder.binding.root.setBackgroundColor(Color.TRANSPARENT)
+                holder.binding.root.background = null
             } else {
                 holder.binding.dayNumberText.text = day.day.toString()
                 val color = when (day.status) {
@@ -138,7 +139,11 @@ class LogFragment : Fragment() {
                     "rest" -> Color.GRAY
                     else -> Color.TRANSPARENT
                 }
-                holder.binding.root.setBackgroundColor(color)
+                val drawable = GradientDrawable()
+                drawable.setColor(color)
+                drawable.setStroke(2, Color.parseColor("#CCCCCC"))
+                drawable.cornerRadius = 4f
+                holder.binding.root.background = drawable
             }
 
             holder.itemView.setOnClickListener {

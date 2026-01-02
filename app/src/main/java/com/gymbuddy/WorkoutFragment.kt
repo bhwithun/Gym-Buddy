@@ -1,6 +1,5 @@
 package com.gymbuddy
 
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +11,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.gymbuddy.databinding.FragmentWorkoutBinding
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,15 +46,35 @@ class WorkoutFragment : Fragment() {
                 Toast.makeText(requireContext(), "Rest Day!", Toast.LENGTH_SHORT).show()
             } else if (day != null) {
                 val baseExercises: List<Exercise> = day.exercises
-                exercises.clear()
-                exercises.addAll(baseExercises)
-
-                // Load saved progress
-                loadProgress()
-
-                val adapter = ExercisePagerAdapter(this@WorkoutFragment, exercises) { position ->
-                    saveProgress()
+                val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                val existingLog = withContext(Dispatchers.IO) {
+                    AppDatabase.getDatabase(requireContext()).workoutLogDao().getByDate(dateStr)
                 }
+                exercises.clear()
+                if (existingLog != null) {
+                    // Load from log
+                    val loggedExercises: List<Exercise> = gson.fromJson(existingLog.loggedJson, object : TypeToken<List<Exercise>>() {}.type)
+                    exercises.addAll(loggedExercises)
+                } else {
+                    // Create new log
+                    exercises.addAll(baseExercises)
+                    val plannedJson = gson.toJson(exercises.map { it.copy(completedSets = 0) })
+                    val loggedJson = gson.toJson(exercises)
+                    val log = WorkoutLogEntity(dateStr, plannedJson, loggedJson)
+                    withContext(Dispatchers.IO) {
+                        AppDatabase.getDatabase(requireContext()).workoutLogDao().insert(log)
+                    }
+                }
+
+                val adapter = ExercisePagerAdapter(this@WorkoutFragment, exercises, { position ->
+                    saveWorkoutLog()
+                }, { updatedExercise ->
+                    // Update the exercise in the list
+                    val pos = exercises.indexOfFirst { it.title == updatedExercise.title && it.weight == updatedExercise.weight }
+                    if (pos != -1) {
+                        exercises[pos] = updatedExercise
+                    }
+                })
                 binding.viewPager.adapter = adapter
             } else {
                 Toast.makeText(requireContext(), "No routine for today", Toast.LENGTH_SHORT).show()
@@ -62,27 +82,7 @@ class WorkoutFragment : Fragment() {
         }
     }
 
-    private fun loadProgress() {
-        val prefs = requireContext().getSharedPreferences("workout_prefs", Context.MODE_PRIVATE)
-        val dateKey = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-        val progressJson = prefs.getString("progress_$dateKey", null)
-        if (progressJson != null) {
-            val savedExercises: List<Exercise> = gson.fromJson(progressJson, object : TypeToken<List<Exercise>>() {}.type)
-            // Update completedSets
-            for (i in exercises.indices) {
-                if (i < savedExercises.size) {
-                    exercises[i].completedSets = savedExercises[i].completedSets
-                }
-            }
-        }
-    }
 
-    private fun saveProgress() {
-        val prefs = requireContext().getSharedPreferences("workout_prefs", Context.MODE_PRIVATE)
-        val dateKey = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-        val progressJson = gson.toJson(exercises)
-        prefs.edit().putString("progress_$dateKey", progressJson).apply()
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -92,13 +92,15 @@ class WorkoutFragment : Fragment() {
 
     private fun saveWorkoutLog() {
         if (exercises.isNotEmpty()) {
-            lifecycleScope.launch {
+            val context = requireContext()
+            CoroutineScope(Dispatchers.IO).launch {
                 val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
                 val plannedJson = gson.toJson(exercises.map { it.copy(completedSets = 0) }) // planned without completion
                 val loggedJson = gson.toJson(exercises)
                 val log = WorkoutLogEntity(dateStr, plannedJson, loggedJson)
-                withContext(Dispatchers.IO) {
-                    AppDatabase.getDatabase(requireContext()).workoutLogDao().insert(log)
+                AppDatabase.getDatabase(context).workoutLogDao().insert(log)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Set completed and saved to history", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -107,7 +109,8 @@ class WorkoutFragment : Fragment() {
     private class ExercisePagerAdapter(
         fragment: Fragment,
         private val exercises: List<Exercise>,
-        private val onSetCompleted: (Int) -> Unit
+        private val onSetCompleted: (Int) -> Unit,
+        private val onUpdate: (Exercise) -> Unit
     ) : FragmentStateAdapter(fragment) {
 
         override fun getItemCount(): Int = exercises.size
@@ -115,6 +118,7 @@ class WorkoutFragment : Fragment() {
         override fun createFragment(position: Int): Fragment {
             val fragment = ExerciseWorkoutFragment.newInstance(exercises[position], position)
             fragment.setOnSetCompletedListener(onSetCompleted)
+            fragment.setOnUpdateListener(onUpdate)
             return fragment
         }
     }
