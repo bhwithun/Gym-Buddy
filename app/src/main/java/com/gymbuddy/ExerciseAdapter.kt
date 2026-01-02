@@ -6,8 +6,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.gymbuddy.databinding.ItemExerciseBinding
 
 class ExerciseAdapter(
-    private val exercises: MutableList<Exercise>,
-    private val onItemClick: (Int) -> Unit
+    internal val exercises: MutableList<Exercise>,
+    private val onItemClick: (Int, String) -> Unit
 ) : RecyclerView.Adapter<ExerciseAdapter.ExerciseViewHolder>() {
 
     inner class ExerciseViewHolder(private val binding: ItemExerciseBinding) :
@@ -15,7 +15,11 @@ class ExerciseAdapter(
 
         init {
             binding.root.setOnClickListener {
-                onItemClick(adapterPosition)
+                onItemClick(adapterPosition, "edit")
+            }
+            binding.root.setOnLongClickListener {
+                onItemClick(adapterPosition, "delete")
+                true
             }
         }
 

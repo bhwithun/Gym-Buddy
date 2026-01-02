@@ -19,6 +19,7 @@ class ExerciseEditorDialogFragment : DialogFragment() {
 
     interface ExerciseEditorListener {
         fun onExerciseUpdated(wrapper: ExerciseWrapper)
+        fun onDayUpdated(day: RoutineDayEntity)
     }
 
     companion object {
@@ -41,7 +42,7 @@ class ExerciseEditorDialogFragment : DialogFragment() {
             index = it.getInt(ARG_INDEX)
             exercise = it.getSerializable(ARG_EXERCISE) as Exercise
         }
-        listener = requireActivity() as ExerciseEditorListener
+        listener = targetFragment as? ExerciseEditorListener ?: parentFragment as? ExerciseEditorListener ?: requireActivity() as ExerciseEditorListener
     }
 
     override fun onCreateView(
