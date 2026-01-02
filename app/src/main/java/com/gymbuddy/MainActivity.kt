@@ -29,33 +29,33 @@ class MainActivity : AppCompatActivity(), ExerciseEditorDialogFragment.ExerciseE
                 val routineDao = db.routineDao()
                 if (routineDao.getAll().isEmpty()) {
                     val sampleDays = arrayOf(
-                        RoutineDayEntity(1, true, "[]"), // Sun rest
-                        RoutineDayEntity(2, false, gson.toJson(listOf(
+                        RoutineDayEntity(1, true, emptyList()), // Sun rest
+                        RoutineDayEntity(2, false, listOf(
                             Exercise("Push-ups", "BW", 10, 3, ""),
                             Exercise("Squats", "BW", 15, 3, ""),
                             Exercise("Planks", "BW", 30, 3, "seconds")
-                        ))),
-                        RoutineDayEntity(3, false, gson.toJson(listOf(
+                        )),
+                        RoutineDayEntity(3, false, listOf(
                             Exercise("Bench Press", "45", 8, 4, ""),
                             Exercise("Rows", "50", 10, 3, ""),
                             Exercise("Lunges", "BW", 12, 3, "per leg")
-                        ))),
-                        RoutineDayEntity(4, false, gson.toJson(listOf(
+                        )),
+                        RoutineDayEntity(4, false, listOf(
                             Exercise("Deadlift", "135", 5, 3, ""),
                             Exercise("Pull-ups", "BW", 8, 4, ""),
                             Exercise("Dips", "BW", 10, 3, "")
-                        ))),
-                        RoutineDayEntity(5, false, gson.toJson(listOf(
+                        )),
+                        RoutineDayEntity(5, false, listOf(
                             Exercise("Squats", "95", 8, 4, ""),
                             Exercise("Overhead Press", "45", 8, 3, ""),
                             Exercise("Bicep Curls", "25", 12, 3, "")
-                        ))),
-                        RoutineDayEntity(6, false, gson.toJson(listOf(
+                        )),
+                        RoutineDayEntity(6, false, listOf(
                             Exercise("Bench Press", "50", 6, 4, ""),
-                            Exercise("Deadlift", "155", 4, 3, ""),
+                            Exercise("Rows", "55", 8, 3, ""),
                             Exercise("Planks", "BW", 45, 3, "seconds")
-                        ))),
-                        RoutineDayEntity(7, true, "[]") // Sat rest
+                        )),
+                        RoutineDayEntity(7, true, emptyList()) // Sat rest
                     )
                     routineDao.insertAll(*sampleDays)
                 }

@@ -43,7 +43,7 @@ class DayDetailDialogFragment : DialogFragment(), ExerciseEditorDialogFragment.E
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         day = arguments?.getSerializable(ARG_DAY) as RoutineDayEntity
-        exercises.addAll(gson.fromJson(day.exercisesJson, object : TypeToken<List<Exercise>>() {}.type))
+        exercises.addAll(day.exercises)
     }
 
     override fun onCreateView(
@@ -100,8 +100,7 @@ class DayDetailDialogFragment : DialogFragment(), ExerciseEditorDialogFragment.E
 
     private fun saveToDb() {
         lifecycleScope.launch {
-            val updatedJson = gson.toJson(exercises)
-            val updatedDay = day.copy(exercisesJson = updatedJson)
+            val updatedDay = day.copy(exercises = exercises)
             withContext(Dispatchers.IO) {
                 AppDatabase.getDatabase(requireContext()).routineDao().insertAll(updatedDay)
             }

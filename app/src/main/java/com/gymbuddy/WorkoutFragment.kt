@@ -45,7 +45,7 @@ class WorkoutFragment : Fragment() {
             if (day?.isRest == true) {
                 Toast.makeText(requireContext(), "Rest Day!", Toast.LENGTH_SHORT).show()
             } else if (day != null) {
-                val baseExercises: List<Exercise> = Gson().fromJson(day.exercisesJson, object : TypeToken<List<Exercise>>() {}.type)
+                val baseExercises: List<Exercise> = day.exercises
                 exercises.clear()
                 exercises.addAll(baseExercises)
 
@@ -86,7 +86,22 @@ class WorkoutFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        saveWorkoutLog()
         _binding = null
+    }
+
+    private fun saveWorkoutLog() {
+        if (exercises.isNotEmpty()) {
+            lifecycleScope.launch {
+                val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                val plannedJson = gson.toJson(exercises.map { it.copy(completedSets = 0) }) // planned without completion
+                val loggedJson = gson.toJson(exercises)
+                val log = WorkoutLogEntity(dateStr, plannedJson, loggedJson)
+                withContext(Dispatchers.IO) {
+                    AppDatabase.getDatabase(requireContext()).workoutLogDao().insert(log)
+                }
+            }
+        }
     }
 
     private class ExercisePagerAdapter(

@@ -8,5 +8,5 @@ data class Exercise(
     val reps: Int,
     val sets: Int,
     val notes: String = "",
-    var completedSets: Int = 0
+    @Transient var completedSets: Int = 0
 ) : Serializable

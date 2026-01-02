@@ -23,11 +23,10 @@ class DayAdapter(private val days: List<RoutineDayEntity>, private val onDayClic
         val day = days[position]
         holder.binding.dayName.text = dayNames[day.dayOfWeek - 1]
 
-        val exercises: List<Exercise> = gson.fromJson(day.exercisesJson, object : TypeToken<List<Exercise>>() {}.type)
         if (day.isRest) {
             holder.binding.exerciseCount.text = "Rest Day"
         } else {
-            val titles = exercises.map { "• ${it.title}" }
+            val titles = day.exercises.map { "• ${it.title}" }
             holder.binding.exerciseCount.text = titles.joinToString("\n")
         }
         holder.binding.restIndicator.visibility = android.view.View.GONE
