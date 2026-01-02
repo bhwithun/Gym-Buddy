@@ -7,5 +7,6 @@ data class Exercise(
     val weight: String,
     val reps: Int,
     val sets: Int,
-    val notes: String = ""
+    val notes: String = "",
+    var completedSets: Int = 0
 ) : Serializable
