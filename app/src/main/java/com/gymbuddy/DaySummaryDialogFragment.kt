@@ -45,6 +45,10 @@ class DaySummaryDialogFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        binding.closeButton.setOnClickListener {
+            dismiss()
+        }
+
         // Create adapter for ViewPager
         val adapter = DaySummaryPagerAdapter(this, startDate)
         binding.viewPager.adapter = adapter
@@ -62,7 +66,7 @@ class DaySummaryDialogFragment : DialogFragment() {
         super.onStart()
         dialog?.window?.setLayout(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            ViewGroup.LayoutParams.MATCH_PARENT
         )
     }
 
