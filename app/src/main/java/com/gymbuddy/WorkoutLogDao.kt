@@ -13,6 +13,9 @@ interface WorkoutLogDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(log: WorkoutLogEntity)
 
+    @Query("DELETE FROM workout_logs WHERE date = :date")
+    fun deleteByDate(date: String)
+
     @Query("SELECT * FROM workout_logs ORDER BY date DESC")
     fun getAll(): List<WorkoutLogEntity>
 }

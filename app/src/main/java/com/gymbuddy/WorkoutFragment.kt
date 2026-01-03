@@ -38,6 +38,25 @@ class WorkoutFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Set the date
+        val dateFormat = SimpleDateFormat("EEE MMM d, yyyy", Locale.getDefault())
+        binding.dateText.text = dateFormat.format(Date())
+
+        loadWorkout()
+
+        binding.resetButton.setOnClickListener {
+            lifecycleScope.launch {
+                val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                withContext(Dispatchers.IO) {
+                    AppDatabase.getDatabase(requireContext()).workoutLogDao().deleteByDate(dateStr)
+                }
+                Toast.makeText(requireContext(), "Today's workout reset", Toast.LENGTH_SHORT).show()
+                loadWorkout()
+            }
+        }
+    }
+
+    private fun loadWorkout() {
         lifecycleScope.launch {
             val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
             val day = withContext(Dispatchers.IO) {
@@ -45,6 +64,7 @@ class WorkoutFragment : Fragment() {
             }
             if (day?.isRest == true) {
                 Toast.makeText(requireContext(), "Rest Day!", Toast.LENGTH_SHORT).show()
+                binding.viewPager.adapter = null
             } else if (day != null) {
                 val baseExercises: List<Exercise> = day.exercises
                 val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
@@ -80,6 +100,7 @@ class WorkoutFragment : Fragment() {
                 binding.viewPager.setPageTransformer(PageFlipPageTransformer())
             } else {
                 Toast.makeText(requireContext(), "No routine for today", Toast.LENGTH_SHORT).show()
+                binding.viewPager.adapter = null
             }
         }
     }
@@ -101,9 +122,6 @@ class WorkoutFragment : Fragment() {
                 val loggedJson = gson.toJson(exercises)
                 val log = WorkoutLogEntity(dateStr, plannedJson, loggedJson)
                 AppDatabase.getDatabase(context).workoutLogDao().insert(log)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Set completed and saved to history", Toast.LENGTH_SHORT).show()
-                }
             }
         }
     }
