@@ -3,6 +3,8 @@ package com.gymbuddy
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.view.LayoutInflater
@@ -20,6 +22,11 @@ class ExerciseWorkoutFragment : Fragment() {
     private var position: Int = 0
     private lateinit var onSetCompleted: (Int) -> Unit
     private lateinit var onUpdate: (Exercise) -> Unit
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var timerRunnable: Runnable? = null
+    private var flashRunnable: Runnable? = null
+    private var remainingSeconds = 59
 
     companion object {
         private const val ARG_EXERCISE = "exercise"
@@ -62,6 +69,20 @@ class ExerciseWorkoutFragment : Fragment() {
 
         updateUI()
 
+        // Set up tap listener for notes magnification toggle
+        binding.notesText.setOnClickListener {
+            if (binding.fullScreenNotesText.visibility == View.VISIBLE) {
+                hideFullScreenNotes()
+            } else {
+                showFullScreenNotes()
+            }
+        }
+
+        // Allow tapping full-screen notes to return to normal view
+        binding.fullScreenNotesText.setOnClickListener {
+            hideFullScreenNotes()
+        }
+
         binding.completeSetButton.setOnClickListener {
             if (exercise.completedSets < exercise.sets) {
                 // Haptic feedback
@@ -76,8 +97,104 @@ class ExerciseWorkoutFragment : Fragment() {
                 updateUI()
                 onUpdate(exercise)
                 onSetCompleted(position)
+
+                // Handle timer: stop if final set completed, otherwise start new timer
+                if (exercise.completedSets >= exercise.sets) {
+                    stopTimer()  // Stop any running timer when final set is completed
+                } else {
+                    startTimer()  // Start timer for next set
+                }
             }
         }
+
+        binding.progressPieChart.setOnClickListener {
+            if (exercise.completedSets >= exercise.sets) {
+                // Reset progress
+                exercise.completedSets = 0
+                updateUI()
+                onUpdate(exercise)
+                stopTimer()
+            } else {
+                // Act like button click
+                binding.completeSetButton.performClick()
+            }
+        }
+    }
+
+    private fun startTimer() {
+        stopTimer() // Stop any existing timer
+        remainingSeconds = 59
+        binding.timerText.text = ":59"
+        binding.timerText.visibility = View.VISIBLE
+
+        timerRunnable = Runnable {
+            remainingSeconds--
+            if (remainingSeconds > 0) {
+                binding.timerText.text = ":${remainingSeconds.toString().padStart(2, '0')}"
+                handler.postDelayed(timerRunnable!!, 1000)
+            } else {
+                startFlashing()
+            }
+        }
+        handler.postDelayed(timerRunnable!!, 1000)
+    }
+
+    private fun startFlashing() {
+        var flashCount = 0
+        flashRunnable = Runnable {
+            binding.timerText.visibility = if (binding.timerText.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
+            flashCount++
+            if (flashCount < 6) { // 3 flashes (6 toggles)
+                handler.postDelayed(flashRunnable!!, 200)
+            } else {
+                binding.timerText.visibility = View.GONE
+            }
+        }
+        handler.post(flashRunnable!!)
+    }
+
+    private fun stopTimer() {
+        timerRunnable?.let { handler.removeCallbacks(it) }
+        flashRunnable?.let { handler.removeCallbacks(it) }
+        timerRunnable = null
+        flashRunnable = null
+        binding.timerText.visibility = View.GONE
+    }
+
+    private fun showFullScreenNotes() {
+        // Set the notes text (remove "Notes: " prefix if present)
+        val notesText = exercise.notes.removePrefix("Notes: ").trim()
+        binding.fullScreenNotesText.text = notesText
+
+        // Hide all other UI elements
+        binding.titleText.visibility = View.GONE
+        binding.weightText.visibility = View.GONE
+        binding.repsText.visibility = View.GONE
+        binding.setsText.visibility = View.GONE
+        binding.notesText.visibility = View.GONE
+        binding.completeSetButton.visibility = View.GONE
+        binding.progressPieChart.visibility = View.GONE
+        binding.timerText.visibility = View.GONE
+
+        // Show full screen notes
+        binding.fullScreenNotesText.visibility = View.VISIBLE
+    }
+
+    private fun hideFullScreenNotes() {
+        // Hide full screen notes
+        binding.fullScreenNotesText.visibility = View.GONE
+
+        // Show all other UI elements
+        binding.titleText.visibility = View.VISIBLE
+        binding.weightText.visibility = View.VISIBLE
+        binding.repsText.visibility = View.VISIBLE
+        binding.setsText.visibility = View.VISIBLE
+        binding.notesText.visibility = View.VISIBLE
+        binding.completeSetButton.visibility = View.VISIBLE
+        binding.progressPieChart.visibility = View.VISIBLE
+
+        // Timer visibility is managed by timer logic
+        updateUI()
     }
 
     private fun updateUI() {
@@ -101,6 +218,7 @@ class ExerciseWorkoutFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        stopTimer()
         _binding = null
     }
 }

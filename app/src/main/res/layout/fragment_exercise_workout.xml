@@ -25,10 +25,10 @@
         android:id="@+id/weightText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="28sp"
+        android:textSize="32sp"
         android:textStyle="bold"
         android:textColor="#00FFFF"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
         android:gravity="center"
         app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
@@ -40,7 +40,7 @@
         android:id="@+id/repsText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="28sp"
+        android:textSize="32sp"
         android:textStyle="bold"
         android:textColor="#FFFF00"
         android:layout_marginTop="16dp"
@@ -55,7 +55,7 @@
         android:id="@+id/setsText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="28sp"
+        android:textSize="32sp"
         android:textStyle="bold"
         android:textColor="#00FF00"
         android:layout_marginTop="16dp"
@@ -90,12 +90,43 @@
 
     <com.gymbuddy.ProgressPieChart
         android:id="@+id/progressPieChart"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:layout_marginStart="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/weightText"
         app:layout_constraintBottom_toBottomOf="@+id/setsText" />
+
+    <TextView
+        android:id="@+id/timerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="48sp"
+        android:textColor="#FF6B6B"
+        android:fontFamily="@font/seven_segment"
+        android:text=":59"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
+        app:layout_constraintEnd_toEndOf="@+id/progressPieChart"
+        app:layout_constraintStart_toStartOf="@+id/progressPieChart"
+        app:layout_constraintTop_toBottomOf="@+id/progressPieChart" />
+
+    <TextView
+        android:id="@+id/fullScreenNotesText"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/item_border"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Keep elbows in" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

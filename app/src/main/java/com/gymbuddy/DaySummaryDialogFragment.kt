@@ -19,6 +19,7 @@ class DaySummaryDialogFragment : DialogFragment() {
 
     companion object {
         private const val ARG_DATE = "date"
+        private const val EPOCH_OFFSET = 20000 // Offset to ensure positive positions (starts ~2025)
 
         fun newInstance(date: String): DaySummaryDialogFragment {
             val fragment = DaySummaryDialogFragment()
@@ -26,6 +27,24 @@ class DaySummaryDialogFragment : DialogFragment() {
             args.putString(ARG_DATE, date)
             fragment.arguments = args
             return fragment
+        }
+
+        // Convert date string to ViewPager position
+        fun dateToPosition(dateStr: String): Int {
+            val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }.parse(dateStr) ?: Date()
+            val daysSinceEpoch = (date.time / (1000 * 60 * 60 * 24)).toInt()
+            return daysSinceEpoch - EPOCH_OFFSET
+        }
+
+        // Convert ViewPager position to date string
+        fun positionToDate(position: Int): String {
+            val daysSinceEpoch = position + EPOCH_OFFSET
+            val date = Date(daysSinceEpoch * 1000L * 60 * 60 * 24)
+            return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }.format(date)
         }
     }
 
@@ -50,16 +69,12 @@ class DaySummaryDialogFragment : DialogFragment() {
         }
 
         // Create adapter for ViewPager
-        val adapter = DaySummaryPagerAdapter(this, startDate)
+        val adapter = DaySummaryPagerAdapter(this, startDate, binding.viewPager)
         binding.viewPager.adapter = adapter
 
-        // Set initial position
-        val calendar = Calendar.getInstance()
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val startCalendar = Calendar.getInstance()
-        startCalendar.time = dateFormat.parse(startDate) ?: Date()
-        val position = (startCalendar.get(Calendar.YEAR) - calendar.get(Calendar.YEAR)) * 365 + startCalendar.get(Calendar.DAY_OF_YEAR) - calendar.get(Calendar.DAY_OF_YEAR)
-        binding.viewPager.setCurrentItem(position + 1000, false) // Offset to allow swiping back
+        // Set initial position using direct date-to-position mapping
+        val targetPosition = dateToPosition(startDate)
+        binding.viewPager.setCurrentItem(targetPosition, false)
     }
 
     override fun onStart() {
@@ -77,18 +92,25 @@ class DaySummaryDialogFragment : DialogFragment() {
 
     private class DaySummaryPagerAdapter(
         fragment: DialogFragment,
-        private val startDate: String
+        private val startDate: String,
+        private val viewPager: androidx.viewpager2.widget.ViewPager2
     ) : FragmentStateAdapter(fragment) {
 
         override fun getItemCount(): Int = Int.MAX_VALUE // Infinite for swiping
 
         override fun createFragment(position: Int): androidx.fragment.app.Fragment {
-            val offset = position - 1000 // Adjust for offset
-            val calendar = Calendar.getInstance()
-            calendar.time = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(startDate) ?: Date()
-            calendar.add(Calendar.DAY_OF_MONTH, offset)
-            val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
-            return DaySummaryPageFragment.newInstance(dateStr)
+            // Use direct position-to-date mapping
+            val dateStr = positionToDate(position)
+            val fragment = DaySummaryPageFragment.newInstance(dateStr)
+            fragment.setOnNavigateToTodayListener {
+                // Calculate position for today's actual date using date-to-position mapping
+                val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }.format(Date())
+                val todayPosition = dateToPosition(today)
+                viewPager.setCurrentItem(todayPosition, true)
+            }
+            return fragment
         }
     }
 }

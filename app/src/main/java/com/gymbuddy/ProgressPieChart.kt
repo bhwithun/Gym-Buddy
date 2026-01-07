@@ -17,6 +17,8 @@ class ProgressPieChart @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
+    private var onClickListener: (() -> Unit)? = null
+
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val checkPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var completed = 0
@@ -43,6 +45,17 @@ class ProgressPieChart @JvmOverloads constructor(
     fun setSegmented(segmented: Boolean) {
         isSegmented = segmented
         invalidate()
+    }
+
+    fun setOnClickListener(listener: () -> Unit) {
+        onClickListener = listener
+    }
+
+    override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+        if (event.action == android.view.MotionEvent.ACTION_UP) {
+            onClickListener?.invoke()
+        }
+        return true
     }
 
     override fun onDraw(canvas: Canvas) {

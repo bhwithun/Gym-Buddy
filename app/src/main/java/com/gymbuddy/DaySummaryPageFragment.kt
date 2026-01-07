@@ -22,6 +22,7 @@ class DaySummaryPageFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var date: String
+    private var onNavigateToToday: (() -> Unit)? = null
 
     companion object {
         private const val ARG_DATE = "date"
@@ -33,6 +34,10 @@ class DaySummaryPageFragment : Fragment() {
             fragment.arguments = args
             return fragment
         }
+    }
+
+    fun setOnNavigateToTodayListener(listener: () -> Unit) {
+        onNavigateToToday = listener
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,6 +65,10 @@ class DaySummaryPageFragment : Fragment() {
         binding.dateText.text = "$dayName $monthName $day, $year"
         binding.exercisesRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
+        binding.todayButton.setOnClickListener {
+            onNavigateToToday?.invoke()
+        }
+
         loadDaySummary()
     }
 
@@ -78,6 +87,15 @@ class DaySummaryPageFragment : Fragment() {
             } else {
                 val log = withContext(Dispatchers.IO) {
                     AppDatabase.getDatabase(requireContext()).workoutLogDao().getByDate(date)
+                }
+
+                // DATE VALIDATION: Check if retrieved record date matches expected date
+                if (log != null && log.date != date) {
+                    // Date mismatch detected!
+                    android.widget.Toast.makeText(requireContext(),
+                        "DATE MISMATCH: Expected $date, got ${log.date}",
+                        android.widget.Toast.LENGTH_LONG).show()
+                    return@launch
                 }
 
                 val plannedExercises = routineDay.exercises
@@ -120,8 +138,9 @@ class DaySummaryPageFragment : Fragment() {
             holder.plannedText.text = plannedExercise?.title ?: ""
             val completed = performedExercise?.completedSets ?: 0
             val total = performedExercise?.sets ?: plannedExercise?.sets ?: 0
-            holder.performedText.text = "Completed $completed of $total sets"
-            holder.performedText.setTextColor(Color.WHITE)
+
+            // Hide the completion text since pie chart shows progress
+            holder.performedText.visibility = View.GONE
 
             holder.progressPieChart.setProgress(completed, total)
         }
