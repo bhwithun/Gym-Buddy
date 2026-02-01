@@ -22,10 +22,10 @@
         tools:text="Bench Press" />
 
     <TextView
-        android:id="@+id/weightText"
+        android:id="@+id/weightLabel"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="32sp"
+        android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="#00FFFF"
         android:layout_marginTop="16dp"
@@ -34,7 +34,21 @@
         app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/titleText"
-        tools:text="Weight: 45" />
+        tools:text="Weight:" />
+
+    <TextView
+        android:id="@+id/weightValue"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:textColor="#00FFFF"
+        android:layout_marginEnd="16dp"
+        android:gravity="center"
+        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/weightLabel"
+        tools:text="45" />
 
     <TextView
         android:id="@+id/repsText"
@@ -48,7 +62,7 @@
         android:gravity="center"
         app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/weightText"
+        app:layout_constraintTop_toBottomOf="@+id/weightValue"
         tools:text="Reps: 8" />
 
     <TextView
@@ -78,15 +92,7 @@
         app:layout_constraintTop_toBottomOf="@+id/setsText"
         tools:text="Notes: Keep elbows in" />
 
-    <Button
-        android:id="@+id/completeSetButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="64dp"
-        android:text="Complete Set 1 of 4"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/notesText" />
+
 
     <com.gymbuddy.ProgressPieChart
         android:id="@+id/progressPieChart"
@@ -94,7 +100,7 @@
         android:layout_height="100dp"
         android:layout_marginStart="16dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/weightText"
+        app:layout_constraintTop_toTopOf="@+id/weightLabel"
         app:layout_constraintBottom_toBottomOf="@+id/setsText" />
 
     <TextView

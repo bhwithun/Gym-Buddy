@@ -83,29 +83,7 @@ class ExerciseWorkoutFragment : Fragment() {
             hideFullScreenNotes()
         }
 
-        binding.completeSetButton.setOnClickListener {
-            if (exercise.completedSets < exercise.sets) {
-                // Haptic feedback
-                val vibrator = requireContext().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    vibrator.vibrate(50)
-                }
 
-                exercise.completedSets++
-                updateUI()
-                onUpdate(exercise)
-                onSetCompleted(position)
-
-                // Handle timer: stop if final set completed, otherwise start new timer
-                if (exercise.completedSets >= exercise.sets) {
-                    stopTimer()  // Stop any running timer when final set is completed
-                } else {
-                    startTimer()  // Start timer for next set
-                }
-            }
-        }
 
         binding.progressPieChart.setOnClickListener {
             if (exercise.completedSets >= exercise.sets) {
@@ -115,8 +93,28 @@ class ExerciseWorkoutFragment : Fragment() {
                 onUpdate(exercise)
                 stopTimer()
             } else {
-                // Act like button click
-                binding.completeSetButton.performClick()
+                // Complete set logic
+                if (exercise.completedSets < exercise.sets) {
+                    // Haptic feedback
+                    val vibrator = requireContext().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+                    } else {
+                        vibrator.vibrate(50)
+                    }
+
+                    exercise.completedSets++
+                    updateUI()
+                    onUpdate(exercise)
+                    onSetCompleted(position)
+
+                    // Handle timer: stop if final set completed, otherwise start new timer
+                    if (exercise.completedSets >= exercise.sets) {
+                        stopTimer()  // Stop any running timer when final set is completed
+                    } else {
+                        startTimer()  // Start timer for next set
+                    }
+                }
             }
         }
     }
@@ -168,11 +166,11 @@ class ExerciseWorkoutFragment : Fragment() {
 
         // Hide all other UI elements
         binding.titleText.visibility = View.GONE
-        binding.weightText.visibility = View.GONE
+        binding.weightLabel.visibility = View.GONE
+        binding.weightValue.visibility = View.GONE
         binding.repsText.visibility = View.GONE
         binding.setsText.visibility = View.GONE
         binding.notesText.visibility = View.GONE
-        binding.completeSetButton.visibility = View.GONE
         binding.progressPieChart.visibility = View.GONE
         binding.timerText.visibility = View.GONE
 
@@ -186,11 +184,11 @@ class ExerciseWorkoutFragment : Fragment() {
 
         // Show all other UI elements
         binding.titleText.visibility = View.VISIBLE
-        binding.weightText.visibility = View.VISIBLE
+        binding.weightLabel.visibility = View.VISIBLE
+        binding.weightValue.visibility = View.VISIBLE
         binding.repsText.visibility = View.VISIBLE
         binding.setsText.visibility = View.VISIBLE
         binding.notesText.visibility = View.VISIBLE
-        binding.completeSetButton.visibility = View.VISIBLE
         binding.progressPieChart.visibility = View.VISIBLE
 
         // Timer visibility is managed by timer logic
@@ -199,21 +197,14 @@ class ExerciseWorkoutFragment : Fragment() {
 
     private fun updateUI() {
         binding.titleText.text = exercise.title
-        binding.weightText.text = "Weight: ${exercise.weight}"
+        binding.weightLabel.text = "Weight:"
+        binding.weightValue.text = exercise.weight.toString()
         binding.repsText.text = "Reps: ${exercise.reps}"
         binding.setsText.text = "Sets: ${exercise.sets}"
         binding.notesText.text = if (exercise.notes.isNotBlank()) "Notes: ${exercise.notes}" else ""
 
         binding.progressPieChart.setProgress(exercise.completedSets, exercise.sets)
         binding.progressPieChart.setSegmented(true)
-
-        if (exercise.completedSets < exercise.sets) {
-            binding.completeSetButton.text = "Complete Set ${exercise.completedSets + 1} of ${exercise.sets}"
-            binding.completeSetButton.isEnabled = true
-        } else {
-            binding.completeSetButton.text = "All Sets Completed"
-            binding.completeSetButton.isEnabled = false
-        }
     }
 
     override fun onDestroyView() {
