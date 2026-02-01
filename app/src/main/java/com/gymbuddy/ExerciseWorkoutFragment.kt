@@ -13,7 +13,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.gymbuddy.databinding.FragmentExerciseWorkoutBinding
 
-class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorListener {
+class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorListener, RepsEditorDialogFragment.RepsEditorListener {
 
     private var _binding: FragmentExerciseWorkoutBinding? = null
     private val binding get() = _binding!!
@@ -68,6 +68,12 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         super.onViewCreated(view, savedInstanceState)
 
         updateUI()
+
+        binding.repsValue.setOnClickListener {
+            val dialog = RepsEditorDialogFragment.newInstance(exercise.reps)
+            dialog.setTargetFragment(this, 0)
+            dialog.show(parentFragmentManager, "reps_editor")
+        }
 
         binding.setsValue.setOnClickListener {
             val dialog = SetsEditorDialogFragment.newInstance(exercise.sets)
@@ -243,6 +249,12 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
 
         binding.progressPieChart.setProgress(exercise.completedSets, exercise.sets)
         binding.progressPieChart.setSegmented(true)
+    }
+
+    override fun onRepsUpdated(newReps: Int) {
+        exercise.reps = newReps
+        updateUI()
+        onUpdate(exercise)
     }
 
     override fun onSetsUpdated(newSets: Int) {
