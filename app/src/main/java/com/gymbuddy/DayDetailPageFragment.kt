@@ -83,6 +83,21 @@ class DayDetailPageFragment : Fragment() {
             val updatedDay = RoutineDayEntity(day.dayOfWeek, exercises.isEmpty(), exercises)
             withContext(Dispatchers.IO) {
                 AppDatabase.getDatabase(requireContext()).routineDao().insertAll(updatedDay)
+
+                // Also update today's workout if it exists
+                val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                val existingLog = AppDatabase.getDatabase(requireContext()).workoutLogDao().getByDate(dateStr)
+                if (existingLog != null) {
+                    val gson = com.google.gson.Gson()
+                    val loggedExercises: MutableList<Exercise> = gson.fromJson(existingLog.loggedJson, object : com.google.gson.reflect.TypeToken<MutableList<Exercise>>() {}.type)
+                    // Reorder loggedExercises to match the new routine order
+                    val reorderedExercises = exercises.map { routineExercise ->
+                        loggedExercises.find { it.title == routineExercise.title } ?: routineExercise
+                    }.toMutableList()
+                    val newLoggedJson = gson.toJson(reorderedExercises)
+                    val updatedLog = existingLog.copy(loggedJson = newLoggedJson)
+                    AppDatabase.getDatabase(requireContext()).workoutLogDao().insert(updatedLog)
+                }
             }
         }
     }

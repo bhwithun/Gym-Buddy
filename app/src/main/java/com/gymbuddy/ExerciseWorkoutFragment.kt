@@ -74,6 +74,16 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
             resumeTimer()
         }
 
+        binding.titleText.setOnClickListener {
+            val dialog = ExerciseEditorDialogFragment.newInstance(exercise) { updatedExercise ->
+                exercise.title = updatedExercise.title
+                exercise.notes = updatedExercise.notes
+                updateUI()
+                onUpdate(exercise)
+            }
+            dialog.show(parentFragmentManager, "exercise_editor")
+        }
+
         binding.weightValue.setOnClickListener {
             val dialog = WeightEditorDialogFragment.newInstance(exercise.weight)
             dialog.setTargetFragment(this, 0)
@@ -151,14 +161,19 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         onUpdate(exercise)
 
         timerRunnable = Runnable {
-            val currentTime = System.currentTimeMillis()
-            exercise.remainingSeconds = maxOf(0, ((exercise.timerEndTime - currentTime) / 1000).toInt())
-            if (exercise.remainingSeconds > 0) {
-                if (_binding != null) updateUI()
-                onUpdate(exercise)
-                handler.postDelayed(timerRunnable!!, 1000)
-            } else {
-                startFlashing()
+            try {
+                val currentTime = System.currentTimeMillis()
+                exercise.remainingSeconds = maxOf(0, ((exercise.timerEndTime - currentTime) / 1000).toInt())
+                if (exercise.remainingSeconds > 0) {
+                    if (_binding != null) updateUI()
+                    onUpdate(exercise)
+                    handler.postDelayed(timerRunnable!!, 1000)
+                } else {
+                    startFlashing()
+                }
+            } catch (e: Exception) {
+                // Timer failed, stop it
+                stopTimer()
             }
         }
         handler.postDelayed(timerRunnable!!, 1000)
@@ -170,14 +185,19 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
             updateUI()
 
             timerRunnable = Runnable {
-                val currentTime = System.currentTimeMillis()
-                exercise.remainingSeconds = maxOf(0, ((exercise.timerEndTime - currentTime) / 1000).toInt())
-                if (exercise.remainingSeconds > 0) {
-                    if (_binding != null) updateUI()
-                    onUpdate(exercise)
-                    handler.postDelayed(timerRunnable!!, 1000)
-                } else {
-                    startFlashing()
+                try {
+                    val currentTime = System.currentTimeMillis()
+                    exercise.remainingSeconds = maxOf(0, ((exercise.timerEndTime - currentTime) / 1000).toInt())
+                    if (exercise.remainingSeconds > 0) {
+                        if (_binding != null) updateUI()
+                        onUpdate(exercise)
+                        handler.postDelayed(timerRunnable!!, 1000)
+                    } else {
+                        startFlashing()
+                    }
+                } catch (e: Exception) {
+                    // Timer failed, stop it
+                    stopTimer()
                 }
             }
             handler.postDelayed(timerRunnable!!, 1000)
@@ -187,18 +207,23 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
     private fun startFlashing() {
         var flashCount = 0
         flashRunnable = Runnable {
-            if (_binding != null) {
-                binding.cooldownValue.visibility = if (binding.cooldownValue.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
-            }
-            flashCount++
-            if (flashCount < 6) { // 3 flashes (6 toggles)
-                handler.postDelayed(flashRunnable!!, 200)
-            } else {
-                exercise.isTimerActive = false
-                exercise.remainingSeconds = 0
-                isTimerRunning = false
-                if (_binding != null) updateUI()
-                onUpdate(exercise)
+            try {
+                if (_binding != null) {
+                    binding.cooldownValue.visibility = if (binding.cooldownValue.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
+                }
+                flashCount++
+                if (flashCount < 6) { // 3 flashes (6 toggles)
+                    handler.postDelayed(flashRunnable!!, 200)
+                } else {
+                    exercise.isTimerActive = false
+                    exercise.remainingSeconds = 0
+                    isTimerRunning = false
+                    if (_binding != null) updateUI()
+                    onUpdate(exercise)
+                }
+            } catch (e: Exception) {
+                // Flashing failed, stop it
+                stopTimer()
             }
         }
         handler.post(flashRunnable!!)
@@ -256,6 +281,8 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
     }
 
     private fun updateUI() {
+        if (_binding == null) return
+
         binding.titleText.text = exercise.title
 
         binding.weightLabel.text = "Weight"

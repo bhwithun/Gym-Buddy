@@ -15,7 +15,7 @@
         android:src="@android:drawable/ic_menu_more"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/weight_text" />
+        app:layout_constraintBottom_toTopOf="@+id/wrs_text" />
 
     <TextView
         android:id="@+id/title_text"

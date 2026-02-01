@@ -78,12 +78,14 @@ class WorkoutFragment : Fragment() {
 
                 val adapter = ExercisePagerAdapter(this@WorkoutFragment, exercises, { position ->
                     saveWorkoutLog()
+                    updateBackgroundColor()
                 }, { updatedExercise ->
                     // Update the exercise in the list
                     val pos = exercises.indexOfFirst { it.title == updatedExercise.title }
                     if (pos != -1) {
                         exercises[pos] = updatedExercise
                     }
+                    updateBackgroundColor()
                     // Also update the routine
                     if (isAdded && context != null) {
                         lifecycleScope.launch {
@@ -107,6 +109,15 @@ class WorkoutFragment : Fragment() {
                 })
                 binding.viewPager.adapter = adapter
                 binding.viewPager.setPageTransformer(PageFlipPageTransformer())
+
+                // Auto-advance to first incomplete exercise
+                val firstIncompleteIndex = exercises.indexOfFirst { it.completedSets < it.sets }
+                if (firstIncompleteIndex != -1) {
+                    binding.viewPager.setCurrentItem(firstIncompleteIndex, false)
+                }
+
+                // Check if all exercises are complete and update background
+                updateBackgroundColor()
             } else {
                 Toast.makeText(requireContext(), "No routine for today", Toast.LENGTH_SHORT).show()
                 binding.viewPager.adapter = null
@@ -150,6 +161,13 @@ class WorkoutFragment : Fragment() {
             fragment.setOnUpdateListener(onUpdate)
             return fragment
         }
+    }
+
+    private fun updateBackgroundColor() {
+        if (_binding == null) return
+        val allComplete = exercises.all { it.completedSets >= it.sets }
+        val backgroundColor = if (allComplete) android.graphics.Color.parseColor("#FF006400") else android.graphics.Color.parseColor("#FF121212") // dark green or default
+        binding.root.setBackgroundColor(backgroundColor)
     }
 
     private class PageFlipPageTransformer : ViewPager2.PageTransformer {
