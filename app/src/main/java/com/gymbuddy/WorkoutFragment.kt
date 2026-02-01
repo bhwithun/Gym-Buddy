@@ -104,19 +104,21 @@ class WorkoutFragment : Fragment() {
                         exercises[pos] = updatedExercise
                     }
                     // Also update the routine
-                    lifecycleScope.launch {
-                        val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-                        val routineDay = withContext(Dispatchers.IO) {
-                            AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(today)
-                        }
-                        if (routineDay != null) {
-                            val updatedExercises = routineDay.exercises.toMutableList()
-                            val routinePos = updatedExercises.indexOfFirst { it.title == updatedExercise.title }
-                            if (routinePos != -1) {
-                                updatedExercises[routinePos] = updatedExercise.copy(completedSets = 0) // reset completedSets for routine template
-                                val updatedRoutineDay = routineDay.copy(exercises = updatedExercises)
-                                withContext(Dispatchers.IO) {
-                                    AppDatabase.getDatabase(requireContext()).routineDao().insertAll(updatedRoutineDay)
+                    if (isAdded && context != null) {
+                        lifecycleScope.launch {
+                            val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+                            val routineDay = withContext(Dispatchers.IO) {
+                                AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(today)
+                            }
+                            if (routineDay != null) {
+                                val updatedExercises = routineDay.exercises.toMutableList()
+                                val routinePos = updatedExercises.indexOfFirst { it.title == updatedExercise.title }
+                                if (routinePos != -1) {
+                                    updatedExercises[routinePos] = updatedExercise.copy(completedSets = 0) // reset completedSets for routine template
+                                    val updatedRoutineDay = routineDay.copy(exercises = updatedExercises)
+                                    withContext(Dispatchers.IO) {
+                                        AppDatabase.getDatabase(requireContext()).routineDao().insertAll(updatedRoutineDay)
+                                    }
                                 }
                             }
                         }

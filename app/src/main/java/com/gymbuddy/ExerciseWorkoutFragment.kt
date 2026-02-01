@@ -69,6 +69,11 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
 
         updateUI()
 
+        // Resume timer if it was running
+        if (exercise.isTimerActive && exercise.timerEndTime > System.currentTimeMillis() && !isTimerRunning) {
+            resumeTimer()
+        }
+
         binding.weightValue.setOnClickListener {
             val dialog = WeightEditorDialogFragment.newInstance(exercise.weight)
             dialog.setTargetFragment(this, 0)
@@ -140,15 +145,16 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
     private fun startTimer(initialSeconds: Int = 59) {
         stopTimer() // Stop any existing timer
         exercise.isTimerActive = true
-        exercise.remainingSeconds = initialSeconds
+        exercise.timerEndTime = System.currentTimeMillis() + initialSeconds * 1000L
         isTimerRunning = true
         updateUI()
         onUpdate(exercise)
 
         timerRunnable = Runnable {
-            exercise.remainingSeconds--
+            val currentTime = System.currentTimeMillis()
+            exercise.remainingSeconds = maxOf(0, ((exercise.timerEndTime - currentTime) / 1000).toInt())
             if (exercise.remainingSeconds > 0) {
-                updateUI()
+                if (_binding != null) updateUI()
                 onUpdate(exercise)
                 handler.postDelayed(timerRunnable!!, 1000)
             } else {
@@ -158,10 +164,32 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         handler.postDelayed(timerRunnable!!, 1000)
     }
 
+    private fun resumeTimer() {
+        if (exercise.isTimerActive && exercise.timerEndTime > System.currentTimeMillis()) {
+            isTimerRunning = true
+            updateUI()
+
+            timerRunnable = Runnable {
+                val currentTime = System.currentTimeMillis()
+                exercise.remainingSeconds = maxOf(0, ((exercise.timerEndTime - currentTime) / 1000).toInt())
+                if (exercise.remainingSeconds > 0) {
+                    if (_binding != null) updateUI()
+                    onUpdate(exercise)
+                    handler.postDelayed(timerRunnable!!, 1000)
+                } else {
+                    startFlashing()
+                }
+            }
+            handler.postDelayed(timerRunnable!!, 1000)
+        }
+    }
+
     private fun startFlashing() {
         var flashCount = 0
         flashRunnable = Runnable {
-            binding.cooldownValue.visibility = if (binding.cooldownValue.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
+            if (_binding != null) {
+                binding.cooldownValue.visibility = if (binding.cooldownValue.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
+            }
             flashCount++
             if (flashCount < 6) { // 3 flashes (6 toggles)
                 handler.postDelayed(flashRunnable!!, 200)
@@ -169,7 +197,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
                 exercise.isTimerActive = false
                 exercise.remainingSeconds = 0
                 isTimerRunning = false
-                updateUI()
+                if (_binding != null) updateUI()
                 onUpdate(exercise)
             }
         }
@@ -182,8 +210,6 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         timerRunnable = null
         flashRunnable = null
         isTimerRunning = false
-        exercise.isTimerActive = false
-        exercise.remainingSeconds = 0
         updateUI()
         onUpdate(exercise)
     }
@@ -280,7 +306,6 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
 
     override fun onDestroyView() {
         super.onDestroyView()
-        stopTimer()
         _binding = null
     }
 }

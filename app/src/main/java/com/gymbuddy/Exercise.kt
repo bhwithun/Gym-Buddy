@@ -10,5 +10,6 @@ data class Exercise(
     val notes: String = "",
     var completedSets: Int = 0,
     var isTimerActive: Boolean = false,
-    var remainingSeconds: Int = 0
+    var remainingSeconds: Int = 0,
+    var timerEndTime: Long = 0
 ) : Serializable
