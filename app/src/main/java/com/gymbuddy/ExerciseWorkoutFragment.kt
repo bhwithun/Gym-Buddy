@@ -26,7 +26,7 @@ class ExerciseWorkoutFragment : Fragment() {
     private val handler = Handler(Looper.getMainLooper())
     private var timerRunnable: Runnable? = null
     private var flashRunnable: Runnable? = null
-    private var remainingSeconds = 59
+    private var isTimerRunning = false
 
     companion object {
         private const val ARG_EXERCISE = "exercise"
@@ -68,11 +68,6 @@ class ExerciseWorkoutFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         updateUI()
-
-        // Resume timer if active
-        if (exercise.isTimerActive && exercise.remainingSeconds > 0) {
-            startTimer(exercise.remainingSeconds)
-        }
 
         // Set up tap listener for notes magnification toggle
         binding.notesText.setOnClickListener {
@@ -128,6 +123,7 @@ class ExerciseWorkoutFragment : Fragment() {
         stopTimer() // Stop any existing timer
         exercise.isTimerActive = true
         exercise.remainingSeconds = initialSeconds
+        isTimerRunning = true
         updateUI()
         onUpdate(exercise)
 
@@ -154,6 +150,7 @@ class ExerciseWorkoutFragment : Fragment() {
             } else {
                 exercise.isTimerActive = false
                 exercise.remainingSeconds = 0
+                isTimerRunning = false
                 updateUI()
                 onUpdate(exercise)
             }
@@ -166,6 +163,7 @@ class ExerciseWorkoutFragment : Fragment() {
         flashRunnable?.let { handler.removeCallbacks(it) }
         timerRunnable = null
         flashRunnable = null
+        isTimerRunning = false
         exercise.isTimerActive = false
         exercise.remainingSeconds = 0
         updateUI()
@@ -216,19 +214,19 @@ class ExerciseWorkoutFragment : Fragment() {
     private fun updateUI() {
         binding.titleText.text = exercise.title
 
-        binding.weightLabel.text = "Weight:"
+        binding.weightLabel.text = "Weight"
         binding.weightValue.text = exercise.weight.toString()
 
-        binding.repsLabel.text = "Reps:"
+        binding.repsLabel.text = "Reps"
         binding.repsValue.text = exercise.reps.toString()
 
-        binding.setsLabel.text = "Sets:"
+        binding.setsLabel.text = "Sets"
         binding.setsValue.text = exercise.sets.toString()
 
-        if (exercise.isTimerActive && exercise.remainingSeconds > 0) {
+        if (exercise.isTimerActive && isTimerRunning && exercise.remainingSeconds > 0) {
             binding.cooldownLabel.visibility = View.VISIBLE
             binding.cooldownValue.visibility = View.VISIBLE
-            binding.cooldownLabel.text = "Cooldown:"
+            binding.cooldownLabel.text = "Cooldown"
             binding.cooldownValue.text = ":${exercise.remainingSeconds.toString().padStart(2, '0')}"
         } else {
             binding.cooldownLabel.visibility = View.GONE
