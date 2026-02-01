@@ -8,13 +8,21 @@
     android:background="@drawable/item_border"
     android:padding="32dp">
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/verticalGuideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
+
     <TextView
         android:id="@+id/titleText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textSize="36sp"
         android:textStyle="bold"
-        android:textColor="#FFFFFF"
+        android:textColor="#d1d2c5"
+        android:background="#b948d244"
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -29,9 +37,8 @@
         android:textStyle="bold"
         android:textColor="#00FFFF"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
         android:gravity="left"
-        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
+        app:layout_constraintEnd_toStartOf="@+id/verticalGuideline"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/titleText"
         tools:text="Weight:" />
@@ -43,9 +50,8 @@
         android:textSize="48sp"
         android:textStyle="bold"
         android:textColor="#00FFFF"
-        android:layout_marginEnd="16dp"
         android:gravity="center"
-        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
+        app:layout_constraintEnd_toStartOf="@+id/verticalGuideline"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/weightLabel"
         tools:text="45" />
@@ -58,9 +64,8 @@
         android:textStyle="bold"
         android:textColor="#FFFF00"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
         android:gravity="left"
-        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
+        app:layout_constraintEnd_toStartOf="@+id/verticalGuideline"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/weightValue"
         tools:text="Reps:" />
@@ -72,9 +77,8 @@
         android:textSize="48sp"
         android:textStyle="bold"
         android:textColor="#FFFF00"
-        android:layout_marginEnd="16dp"
         android:gravity="center"
-        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
+        app:layout_constraintEnd_toStartOf="@+id/verticalGuideline"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/repsLabel"
         tools:text="8" />
@@ -87,9 +91,8 @@
         android:textStyle="bold"
         android:textColor="#00FF00"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
         android:gravity="left"
-        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
+        app:layout_constraintEnd_toStartOf="@+id/verticalGuideline"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/repsValue"
         tools:text="Sets:" />
@@ -101,12 +104,41 @@
         android:textSize="48sp"
         android:textStyle="bold"
         android:textColor="#00FF00"
-        android:layout_marginEnd="16dp"
         android:gravity="center"
-        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
+        app:layout_constraintEnd_toStartOf="@+id/verticalGuideline"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/setsLabel"
         tools:text="4" />
+
+    <TextView
+        android:id="@+id/cooldownLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#FF6B6B"
+        android:layout_marginTop="16dp"
+        android:gravity="left"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@+id/verticalGuideline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/setsValue"
+        tools:text="Cooldown:" />
+
+    <TextView
+        android:id="@+id/cooldownValue"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="48sp"
+        android:textStyle="bold"
+        android:textColor="#FF6B6B"
+        android:fontFamily="@font/seven_segment"
+        android:gravity="center"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@+id/verticalGuideline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cooldownLabel"
+        tools:text=":59" />
 
     <TextView
         android:id="@+id/notesText"
@@ -117,31 +149,18 @@
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/setsValue"
+        app:layout_constraintTop_toBottomOf="@+id/cooldownValue"
         tools:text="Notes: Keep elbows in" />
 
     <com.gymbuddy.ProgressPieChart
         android:id="@+id/progressPieChart"
-        android:layout_width="100dp"
+        android:layout_width="0dp"
         android:layout_height="100dp"
-        android:layout_marginStart="16dp"
+        app:layout_constraintStart_toStartOf="@+id/verticalGuideline"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/weightLabel"
-        app:layout_constraintBottom_toBottomOf="@+id/setsValue" />
+        app:layout_constraintTop_toTopOf="@+id/weightLabel" />
 
-    <TextView
-        android:id="@+id/timerText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="48sp"
-        android:textColor="#FF6B6B"
-        android:fontFamily="@font/seven_segment"
-        android:text=":59"
-        android:visibility="gone"
-        android:layout_marginTop="8dp"
-        app:layout_constraintEnd_toEndOf="@+id/progressPieChart"
-        app:layout_constraintStart_toStartOf="@+id/progressPieChart"
-        app:layout_constraintTop_toBottomOf="@+id/progressPieChart" />
+
 
     <TextView
         android:id="@+id/fullScreenNotesText"

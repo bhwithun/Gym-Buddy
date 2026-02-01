@@ -69,6 +69,11 @@ class ExerciseWorkoutFragment : Fragment() {
 
         updateUI()
 
+        // Resume timer if active
+        if (exercise.isTimerActive && exercise.remainingSeconds > 0) {
+            startTimer(exercise.remainingSeconds)
+        }
+
         // Set up tap listener for notes magnification toggle
         binding.notesText.setOnClickListener {
             if (binding.fullScreenNotesText.visibility == View.VISIBLE) {
@@ -119,16 +124,18 @@ class ExerciseWorkoutFragment : Fragment() {
         }
     }
 
-    private fun startTimer() {
+    private fun startTimer(initialSeconds: Int = 59) {
         stopTimer() // Stop any existing timer
-        remainingSeconds = 59
-        binding.timerText.text = ":59"
-        binding.timerText.visibility = View.VISIBLE
+        exercise.isTimerActive = true
+        exercise.remainingSeconds = initialSeconds
+        updateUI()
+        onUpdate(exercise)
 
         timerRunnable = Runnable {
-            remainingSeconds--
-            if (remainingSeconds > 0) {
-                binding.timerText.text = ":${remainingSeconds.toString().padStart(2, '0')}"
+            exercise.remainingSeconds--
+            if (exercise.remainingSeconds > 0) {
+                updateUI()
+                onUpdate(exercise)
                 handler.postDelayed(timerRunnable!!, 1000)
             } else {
                 startFlashing()
@@ -140,12 +147,15 @@ class ExerciseWorkoutFragment : Fragment() {
     private fun startFlashing() {
         var flashCount = 0
         flashRunnable = Runnable {
-            binding.timerText.visibility = if (binding.timerText.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
+            binding.cooldownValue.visibility = if (binding.cooldownValue.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
             flashCount++
             if (flashCount < 6) { // 3 flashes (6 toggles)
                 handler.postDelayed(flashRunnable!!, 200)
             } else {
-                binding.timerText.visibility = View.GONE
+                exercise.isTimerActive = false
+                exercise.remainingSeconds = 0
+                updateUI()
+                onUpdate(exercise)
             }
         }
         handler.post(flashRunnable!!)
@@ -156,7 +166,10 @@ class ExerciseWorkoutFragment : Fragment() {
         flashRunnable?.let { handler.removeCallbacks(it) }
         timerRunnable = null
         flashRunnable = null
-        binding.timerText.visibility = View.GONE
+        exercise.isTimerActive = false
+        exercise.remainingSeconds = 0
+        updateUI()
+        onUpdate(exercise)
     }
 
     private fun showFullScreenNotes() {
@@ -172,9 +185,10 @@ class ExerciseWorkoutFragment : Fragment() {
         binding.repsValue.visibility = View.GONE
         binding.setsLabel.visibility = View.GONE
         binding.setsValue.visibility = View.GONE
+        binding.cooldownLabel.visibility = View.GONE
+        binding.cooldownValue.visibility = View.GONE
         binding.notesText.visibility = View.GONE
         binding.progressPieChart.visibility = View.GONE
-        binding.timerText.visibility = View.GONE
 
         // Show full screen notes
         binding.fullScreenNotesText.visibility = View.VISIBLE
@@ -195,21 +209,31 @@ class ExerciseWorkoutFragment : Fragment() {
         binding.notesText.visibility = View.VISIBLE
         binding.progressPieChart.visibility = View.VISIBLE
 
-        // Timer visibility is managed by timer logic
+        // Cooldown visibility is managed by updateUI
         updateUI()
     }
 
     private fun updateUI() {
         binding.titleText.text = exercise.title
 
-        binding.weightLabel.text = "Weight"
+        binding.weightLabel.text = "Weight:"
         binding.weightValue.text = exercise.weight.toString()
 
-        binding.repsLabel.text = "Reps"
+        binding.repsLabel.text = "Reps:"
         binding.repsValue.text = exercise.reps.toString()
 
-        binding.setsLabel.text = "Sets"
+        binding.setsLabel.text = "Sets:"
         binding.setsValue.text = exercise.sets.toString()
+
+        if (exercise.isTimerActive && exercise.remainingSeconds > 0) {
+            binding.cooldownLabel.visibility = View.VISIBLE
+            binding.cooldownValue.visibility = View.VISIBLE
+            binding.cooldownLabel.text = "Cooldown:"
+            binding.cooldownValue.text = ":${exercise.remainingSeconds.toString().padStart(2, '0')}"
+        } else {
+            binding.cooldownLabel.visibility = View.GONE
+            binding.cooldownValue.visibility = View.GONE
+        }
 
         binding.notesText.text = if (exercise.notes.isNotBlank()) "Notes: ${exercise.notes}" else ""
 
