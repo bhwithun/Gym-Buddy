@@ -59,7 +59,7 @@ class ExerciseEditorDialogFragment : DialogFragment() {
 
         // Populate fields
         binding.titleEdit.setText(exercise.title)
-        binding.weightEdit.setText(exercise.weight)
+        binding.weightEdit.setText(exercise.weight.toString())
         binding.repsValue.text = exercise.reps.toString()
         binding.setsValue.text = exercise.sets.toString()
         binding.notesEdit.setText(exercise.notes)
@@ -98,11 +98,12 @@ class ExerciseEditorDialogFragment : DialogFragment() {
         // Save
         binding.saveButton.setOnClickListener {
             val title = binding.titleEdit.text.toString().trim()
-            val weight = binding.weightEdit.text.toString().trim()
-            if (title.isBlank() || weight.isBlank()) {
+            val weightStr = binding.weightEdit.text.toString().trim()
+            if (title.isBlank() || weightStr.isBlank()) {
                 // Show error, but for now, assume valid
                 return@setOnClickListener
             }
+            val weight = weightStr.toIntOrNull() ?: 1
             val reps = binding.repsValue.text.toString().toInt()
             val sets = binding.setsValue.text.toString().toInt()
             val notes = binding.notesEdit.text.toString()

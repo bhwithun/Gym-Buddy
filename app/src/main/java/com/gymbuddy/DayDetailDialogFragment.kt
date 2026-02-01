@@ -112,7 +112,7 @@ class DayDetailDialogFragment : DialogFragment(), ExerciseEditorDialogFragment.E
         itemTouchHelper.attachToRecyclerView(binding.exercisesRecyclerView)
 
         binding.addButton.setOnClickListener {
-            val newExercise = Exercise("New Exercise", "0", 10, 3, "")
+            val newExercise = Exercise("New Exercise", 0, 10, 3, "")
             exercises.add(newExercise)
             binding.exercisesRecyclerView.adapter?.notifyItemInserted(exercises.size - 1)
             saveToDb()

@@ -99,7 +99,7 @@ class WorkoutFragment : Fragment() {
                     saveWorkoutLog()
                 }, { updatedExercise ->
                     // Update the exercise in the list
-                    val pos = exercises.indexOfFirst { it.title == updatedExercise.title && it.weight == updatedExercise.weight }
+                    val pos = exercises.indexOfFirst { it.title == updatedExercise.title }
                     if (pos != -1) {
                         exercises[pos] = updatedExercise
                     }
@@ -111,7 +111,7 @@ class WorkoutFragment : Fragment() {
                         }
                         if (routineDay != null) {
                             val updatedExercises = routineDay.exercises.toMutableList()
-                            val routinePos = updatedExercises.indexOfFirst { it.title == updatedExercise.title && it.weight == updatedExercise.weight }
+                            val routinePos = updatedExercises.indexOfFirst { it.title == updatedExercise.title }
                             if (routinePos != -1) {
                                 updatedExercises[routinePos] = updatedExercise.copy(completedSets = 0) // reset completedSets for routine template
                                 val updatedRoutineDay = routineDay.copy(exercises = updatedExercises)

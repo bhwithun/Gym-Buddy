@@ -13,7 +13,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.gymbuddy.databinding.FragmentExerciseWorkoutBinding
 
-class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorListener, RepsEditorDialogFragment.RepsEditorListener {
+class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorListener, RepsEditorDialogFragment.RepsEditorListener, WeightEditorDialogFragment.WeightEditorListener {
 
     private var _binding: FragmentExerciseWorkoutBinding? = null
     private val binding get() = _binding!!
@@ -68,6 +68,12 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         super.onViewCreated(view, savedInstanceState)
 
         updateUI()
+
+        binding.weightValue.setOnClickListener {
+            val dialog = WeightEditorDialogFragment.newInstance(exercise.weight)
+            dialog.setTargetFragment(this, 0)
+            dialog.show(parentFragmentManager, "weight_editor")
+        }
 
         binding.repsValue.setOnClickListener {
             val dialog = RepsEditorDialogFragment.newInstance(exercise.reps)
@@ -227,7 +233,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         binding.titleText.text = exercise.title
 
         binding.weightLabel.text = "Weight"
-        binding.weightValue.text = exercise.weight.toString()
+        binding.weightValue.text = if (exercise.weight == 0) "-" else exercise.weight.toString()
 
         binding.repsLabel.text = "Reps"
         binding.repsValue.text = exercise.reps.toString()
@@ -249,6 +255,12 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
 
         binding.progressPieChart.setProgress(exercise.completedSets, exercise.sets)
         binding.progressPieChart.setSegmented(true)
+    }
+
+    override fun onWeightUpdated(newWeight: Int) {
+        exercise.weight = newWeight
+        updateUI()
+        onUpdate(exercise)
     }
 
     override fun onRepsUpdated(newReps: Int) {

@@ -4,7 +4,7 @@ import java.io.Serializable
 
 data class Exercise(
     val title: String,
-    val weight: String,
+    var weight: Int,
     var reps: Int,
     var sets: Int,
     val notes: String = "",

@@ -28,7 +28,7 @@ class ExerciseAdapter(
 
         fun bind(exercise: Exercise) {
             binding.titleText.text = exercise.title
-            binding.weightText.text = exercise.weight
+            binding.weightText.text = exercise.weight.toString()
             val repsSetsText = "${exercise.reps} x ${exercise.sets}"
             val spannable = SpannableString(repsSetsText)
             val repsEnd = exercise.reps.toString().length
