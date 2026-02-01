@@ -19,7 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class RoutineFragment : Fragment(), ExerciseEditorDialogFragment.ExerciseEditorListener {
+class RoutineFragment : Fragment() {
 
     private var _binding: FragmentRoutineBinding? = null
     private val binding get() = _binding!!
@@ -87,20 +87,5 @@ class RoutineFragment : Fragment(), ExerciseEditorDialogFragment.ExerciseEditorL
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    override fun onExerciseUpdated(wrapper: ExerciseWrapper) {
-        // Not used
-    }
-
-    override fun onDayUpdated(day: RoutineDayEntity) {
-        // The LiveData should update automatically, but to ensure, we can refresh
-        val dao = AppDatabase.getDatabase(requireContext()).routineDao()
-        dao.getAllLive().observe(viewLifecycleOwner) { days ->
-            binding.recyclerView.adapter = DayAdapter(days) { d ->
-                val fragment = DayDetailDialogFragment.newInstance(d)
-                fragment.show(parentFragmentManager, "day_detail")
-            }
-        }
     }
 }

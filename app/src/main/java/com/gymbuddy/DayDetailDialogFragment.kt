@@ -1,26 +1,25 @@
 package com.gymbuddy
 
-import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
 import com.gymbuddy.databinding.DialogDayDetailBinding
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
-class DayDetailDialogFragment : DialogFragment(), ExerciseEditorDialogFragment.ExerciseEditorListener {
+class DayDetailDialogFragment : DialogFragment() {
 
     private var _binding: DialogDayDetailBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var day: RoutineDayEntity
-    private lateinit var exercises: MutableList<Exercise>
+    private lateinit var days: List<RoutineDayEntity>
+    private var currentDayIndex: Int = 0
 
     companion object {
         private const val ARG_DAY = "day"
@@ -36,7 +35,14 @@ class DayDetailDialogFragment : DialogFragment(), ExerciseEditorDialogFragment.E
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        day = arguments?.getSerializable(ARG_DAY) as RoutineDayEntity
+        val day = arguments?.getSerializable(ARG_DAY) as RoutineDayEntity
+
+        runBlocking {
+            days = withContext(Dispatchers.IO) {
+                AppDatabase.getDatabase(requireContext()).routineDao().getAll()
+            }
+            currentDayIndex = days.indexOfFirst { it.dayOfWeek == day.dayOfWeek }
+        }
     }
 
     override fun onCreateView(
@@ -50,85 +56,17 @@ class DayDetailDialogFragment : DialogFragment(), ExerciseEditorDialogFragment.E
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val dayNames = arrayOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
-        binding.dayTitle.text = dayNames[day.dayOfWeek - 1]
+        binding.viewPager.adapter = DayPagerAdapter(this)
+        binding.viewPager.setCurrentItem(currentDayIndex, false)
 
-        exercises = day.exercises.toMutableList()
-        binding.restDayText.visibility = if (exercises.isEmpty()) View.VISIBLE else View.GONE
-
-        val adapter = ExerciseAdapter(exercises) { position, action ->
-            if (action == "edit") {
-                val fragment = ExerciseEditorDialogFragment.newInstance(position, exercises[position])
-                fragment.setTargetFragment(this, 0)
-                fragment.show(parentFragmentManager, "exercise_editor")
-            }
-        }
-        binding.exercisesRecyclerView.adapter = adapter
-
-        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
-            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
-                return false
-            }
-
-            override fun onChildDraw(
-                c: android.graphics.Canvas,
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                dX: Float,
-                dY: Float,
-                actionState: Int,
-                isCurrentlyActive: Boolean
-            ) {
-                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
-                    val itemView = viewHolder.itemView
-                    val paint = android.graphics.Paint()
-                    val icon = resources.getDrawable(android.R.drawable.ic_menu_close_clear_cancel, null)
-
-                    if (dX > 0) {
-                        paint.color = Color.RED
-                        val background = android.graphics.RectF(itemView.left.toFloat(), itemView.top.toFloat(), itemView.left + dX, itemView.bottom.toFloat())
-                        c.drawRect(background, paint)
-
-                        val iconMargin = (itemView.height - icon.intrinsicHeight) / 2
-                        val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2
-                        val iconBottom = iconTop + icon.intrinsicHeight
-                        val iconLeft = itemView.left + iconMargin
-                        val iconRight = iconLeft + icon.intrinsicWidth
-                        icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
-                        icon.draw(c)
-                    }
-                }
-
-                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
-            }
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                exercises.removeAt(position)
-                adapter.notifyItemRemoved(position)
-                saveToDb()
-            }
-        })
-        itemTouchHelper.attachToRecyclerView(binding.exercisesRecyclerView)
-
-        binding.addButton.setOnClickListener {
-            val newExercise = Exercise("New Exercise", 0, 10, 3, "")
-            exercises.add(newExercise)
-            binding.exercisesRecyclerView.adapter?.notifyItemInserted(exercises.size - 1)
-            saveToDb()
+        // Add rotation animation for page transitions
+        binding.viewPager.setPageTransformer { page, position ->
+            page.rotationY = position * -30f
+            page.alpha = 1 - Math.abs(position)
         }
 
         binding.closeButton.setOnClickListener {
             dismiss()
-        }
-    }
-
-    private fun saveToDb() {
-        lifecycleScope.launch {
-            val updatedDay = RoutineDayEntity(day.dayOfWeek, exercises.isEmpty(), exercises)
-            withContext(Dispatchers.IO) {
-                AppDatabase.getDatabase(requireContext()).routineDao().insertAll(updatedDay)
-            }
         }
     }
 
@@ -145,20 +83,11 @@ class DayDetailDialogFragment : DialogFragment(), ExerciseEditorDialogFragment.E
         _binding = null
     }
 
-    override fun onExerciseUpdated(wrapper: ExerciseWrapper) {
-        when (wrapper.status) {
-            "updated" -> {
-                exercises[wrapper.index] = wrapper.exercise
-                binding.exercisesRecyclerView.adapter?.notifyItemChanged(wrapper.index)
-                saveToDb()
-            }
-            "canceled" -> {
-                // Do nothing
-            }
-        }
-    }
+    private inner class DayPagerAdapter(fragment: DialogFragment) : FragmentStateAdapter(fragment) {
+        override fun getItemCount(): Int = days.size
 
-    override fun onDayUpdated(day: RoutineDayEntity) {
-        // Not used
+        override fun createFragment(position: Int): androidx.fragment.app.Fragment {
+            return DayDetailPageFragment.newInstance(days[position])
+        }
     }
 }

@@ -17,7 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MainActivity : AppCompatActivity(), ExerciseEditorDialogFragment.ExerciseEditorListener {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val gson = Gson()
@@ -93,17 +93,5 @@ class MainActivity : AppCompatActivity(), ExerciseEditorDialogFragment.ExerciseE
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commit()
-    }
-
-    override fun onExerciseUpdated(wrapper: ExerciseWrapper) {
-        // For now, just show a toast since exercises are not in a global list
-        when (wrapper.status) {
-            "updated" -> Toast.makeText(this, "Exercise updated", Toast.LENGTH_SHORT).show()
-            "canceled" -> Toast.makeText(this, "Edit canceled", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    override fun onDayUpdated(day: RoutineDayEntity) {
-        Toast.makeText(this, "Day updated", Toast.LENGTH_SHORT).show()
     }
 }
