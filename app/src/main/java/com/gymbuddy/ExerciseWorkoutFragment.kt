@@ -13,7 +13,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.gymbuddy.databinding.FragmentExerciseWorkoutBinding
 
-class ExerciseWorkoutFragment : Fragment() {
+class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorListener {
 
     private var _binding: FragmentExerciseWorkoutBinding? = null
     private val binding get() = _binding!!
@@ -68,6 +68,12 @@ class ExerciseWorkoutFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         updateUI()
+
+        binding.setsValue.setOnClickListener {
+            val dialog = SetsEditorDialogFragment.newInstance(exercise.sets)
+            dialog.setTargetFragment(this, 0)
+            dialog.show(parentFragmentManager, "sets_editor")
+        }
 
         // Set up tap listener for notes magnification toggle
         binding.notesText.setOnClickListener {
@@ -237,6 +243,15 @@ class ExerciseWorkoutFragment : Fragment() {
 
         binding.progressPieChart.setProgress(exercise.completedSets, exercise.sets)
         binding.progressPieChart.setSegmented(true)
+    }
+
+    override fun onSetsUpdated(newSets: Int) {
+        exercise.sets = newSets
+        if (exercise.completedSets >= exercise.sets) {
+            stopTimer()
+        }
+        updateUI()
+        onUpdate(exercise)
     }
 
     override fun onDestroyView() {
