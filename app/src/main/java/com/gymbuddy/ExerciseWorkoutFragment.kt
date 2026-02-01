@@ -168,8 +168,10 @@ class ExerciseWorkoutFragment : Fragment() {
         binding.titleText.visibility = View.GONE
         binding.weightLabel.visibility = View.GONE
         binding.weightValue.visibility = View.GONE
-        binding.repsText.visibility = View.GONE
-        binding.setsText.visibility = View.GONE
+        binding.repsLabel.visibility = View.GONE
+        binding.repsValue.visibility = View.GONE
+        binding.setsLabel.visibility = View.GONE
+        binding.setsValue.visibility = View.GONE
         binding.notesText.visibility = View.GONE
         binding.progressPieChart.visibility = View.GONE
         binding.timerText.visibility = View.GONE
@@ -186,8 +188,10 @@ class ExerciseWorkoutFragment : Fragment() {
         binding.titleText.visibility = View.VISIBLE
         binding.weightLabel.visibility = View.VISIBLE
         binding.weightValue.visibility = View.VISIBLE
-        binding.repsText.visibility = View.VISIBLE
-        binding.setsText.visibility = View.VISIBLE
+        binding.repsLabel.visibility = View.VISIBLE
+        binding.repsValue.visibility = View.VISIBLE
+        binding.setsLabel.visibility = View.VISIBLE
+        binding.setsValue.visibility = View.VISIBLE
         binding.notesText.visibility = View.VISIBLE
         binding.progressPieChart.visibility = View.VISIBLE
 
@@ -197,10 +201,16 @@ class ExerciseWorkoutFragment : Fragment() {
 
     private fun updateUI() {
         binding.titleText.text = exercise.title
-        binding.weightLabel.text = "Weight:"
+
+        binding.weightLabel.text = "Weight"
         binding.weightValue.text = exercise.weight.toString()
-        binding.repsText.text = "Reps: ${exercise.reps}"
-        binding.setsText.text = "Sets: ${exercise.sets}"
+
+        binding.repsLabel.text = "Reps"
+        binding.repsValue.text = exercise.reps.toString()
+
+        binding.setsLabel.text = "Sets"
+        binding.setsValue.text = exercise.sets.toString()
+
         binding.notesText.text = if (exercise.notes.isNotBlank()) "Notes: ${exercise.notes}" else ""
 
         binding.progressPieChart.setProgress(exercise.completedSets, exercise.sets)

@@ -30,7 +30,7 @@
         android:textColor="#00FFFF"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:gravity="center"
+        android:gravity="left"
         app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/titleText"
@@ -40,7 +40,7 @@
         android:id="@+id/weightValue"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="32sp"
+        android:textSize="48sp"
         android:textStyle="bold"
         android:textColor="#00FFFF"
         android:layout_marginEnd="16dp"
@@ -51,34 +51,62 @@
         tools:text="45" />
 
     <TextView
-        android:id="@+id/repsText"
+        android:id="@+id/repsLabel"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="32sp"
+        android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="#FFFF00"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:gravity="center"
+        android:gravity="left"
         app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/weightValue"
-        tools:text="Reps: 8" />
+        tools:text="Reps:" />
 
     <TextView
-        android:id="@+id/setsText"
+        android:id="@+id/repsValue"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="32sp"
+        android:textSize="48sp"
         android:textStyle="bold"
-        android:textColor="#00FF00"
-        android:layout_marginTop="16dp"
+        android:textColor="#FFFF00"
         android:layout_marginEnd="16dp"
         android:gravity="center"
         app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/repsText"
-        tools:text="Sets: 4" />
+        app:layout_constraintTop_toBottomOf="@+id/repsLabel"
+        tools:text="8" />
+
+    <TextView
+        android:id="@+id/setsLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#00FF00"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:gravity="left"
+        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/repsValue"
+        tools:text="Sets:" />
+
+    <TextView
+        android:id="@+id/setsValue"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="48sp"
+        android:textStyle="bold"
+        android:textColor="#00FF00"
+        android:layout_marginEnd="16dp"
+        android:gravity="center"
+        app:layout_constraintEnd_toStartOf="@+id/progressPieChart"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/setsLabel"
+        tools:text="4" />
 
     <TextView
         android:id="@+id/notesText"
@@ -89,10 +117,8 @@
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/setsText"
+        app:layout_constraintTop_toBottomOf="@+id/setsValue"
         tools:text="Notes: Keep elbows in" />
-
-
 
     <com.gymbuddy.ProgressPieChart
         android:id="@+id/progressPieChart"
@@ -101,7 +127,7 @@
         android:layout_marginStart="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/weightLabel"
-        app:layout_constraintBottom_toBottomOf="@+id/setsText" />
+        app:layout_constraintBottom_toBottomOf="@+id/setsValue" />
 
     <TextView
         android:id="@+id/timerText"
