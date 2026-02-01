@@ -2,5 +2,6 @@
 <resources>
     <style name="Theme.GymBuddy" parent="Theme.Material3.Dark.NoActionBar">
         <!-- Customize your theme here. -->
+        <item name="android:statusBarColor">#FF000000</item>
     </style>
 </resources>
