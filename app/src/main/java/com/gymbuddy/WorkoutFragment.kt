@@ -1,6 +1,5 @@
 package com.gymbuddy
 
-import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -44,24 +43,6 @@ class WorkoutFragment : Fragment() {
         binding.dateText.text = dateFormat.format(Date())
 
         loadWorkout()
-
-        binding.resetButton.setOnClickListener {
-            AlertDialog.Builder(requireContext())
-                .setTitle("Reset Today")
-                .setMessage("Are you sure you want to reset today's workout progress? This action cannot be undone.")
-                .setPositiveButton("Reset") { _, _ ->
-                    lifecycleScope.launch {
-                        val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-                        withContext(Dispatchers.IO) {
-                            AppDatabase.getDatabase(requireContext()).workoutLogDao().deleteByDate(dateStr)
-                        }
-                        Toast.makeText(requireContext(), "Today's workout reset", Toast.LENGTH_SHORT).show()
-                        loadWorkout()
-                    }
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
-        }
     }
 
     private fun loadWorkout() {
