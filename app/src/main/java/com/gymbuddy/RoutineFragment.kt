@@ -37,10 +37,23 @@ class RoutineFragment : Fragment() {
 
         val dao = AppDatabase.getDatabase(requireContext()).routineDao()
         dao.getAllLive().observe(viewLifecycleOwner) { days ->
-            binding.recyclerView.adapter = DayAdapter(days) { day ->
+            val adapter = DayAdapter(days, { day ->
                 val fragment = DayDetailDialogFragment.newInstance(day)
                 fragment.show(parentFragmentManager, "day_detail")
-            }
+            }, { draggedDayOfWeek, targetDayOfWeek ->
+                // Swap exercises between dragged and target days
+                val mutableDays = days.toMutableList()
+                val draggedIndex = mutableDays.indexOfFirst { it.dayOfWeek == draggedDayOfWeek }
+                val targetIndex = mutableDays.indexOfFirst { it.dayOfWeek == targetDayOfWeek }
+                if (draggedIndex != -1 && targetIndex != -1 && draggedIndex != targetIndex) {
+                    val tempExercises = mutableDays[draggedIndex].exercises
+                    val tempIsRest = mutableDays[draggedIndex].isRest
+                    mutableDays[draggedIndex] = mutableDays[draggedIndex].copy(exercises = mutableDays[targetIndex].exercises, isRest = mutableDays[targetIndex].isRest)
+                    mutableDays[targetIndex] = mutableDays[targetIndex].copy(exercises = tempExercises, isRest = tempIsRest)
+                    saveChanges(mutableDays)
+                }
+            })
+            binding.recyclerView.adapter = adapter
         }
 
         binding.exportButton.setOnClickListener {
@@ -80,6 +93,34 @@ class RoutineFragment : Fragment() {
                 }
             } else {
                 Toast.makeText(requireContext(), "No data in clipboard", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun saveChanges(days: List<RoutineDayEntity>) {
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                val dao = AppDatabase.getDatabase(requireContext()).routineDao()
+                dao.insertAll(*days.toTypedArray())
+
+                // Update today's workout log if it exists
+                val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                val existingLog = AppDatabase.getDatabase(requireContext()).workoutLogDao().getByDate(dateStr)
+                if (existingLog != null) {
+                    val gson = com.google.gson.Gson()
+                    val loggedExercises: MutableList<Exercise> = gson.fromJson(existingLog.loggedJson, object : com.google.gson.reflect.TypeToken<MutableList<Exercise>>() {}.type)
+                    // Reorder loggedExercises to match the new routine order for today's day
+                    val todayDayOfWeek = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)
+                    val todayRoutineDay = days.find { it.dayOfWeek == todayDayOfWeek }
+                    if (todayRoutineDay != null) {
+                        val reorderedExercises = todayRoutineDay.exercises.map { routineExercise ->
+                            loggedExercises.find { it.title == routineExercise.title } ?: routineExercise
+                        }.toMutableList()
+                        val newLoggedJson = gson.toJson(reorderedExercises)
+                        val updatedLog = existingLog.copy(loggedJson = newLoggedJson)
+                        AppDatabase.getDatabase(requireContext()).workoutLogDao().insert(updatedLog)
+                    }
+                }
             }
         }
     }
