@@ -12,8 +12,5 @@
         android:id="@+id/navigation_workout"
         android:icon="@android:drawable/ic_menu_send"
         android:title="Workout" />
-    <item
-        android:id="@+id/navigation_log"
-        android:icon="@android:drawable/ic_menu_recent_history"
-        android:title="Log" />
+
 </menu>

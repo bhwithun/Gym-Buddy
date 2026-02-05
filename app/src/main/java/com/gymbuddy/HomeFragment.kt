@@ -1,11 +1,13 @@
 package com.gymbuddy
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.ekn.gruzer.gaugelibrary.Range
 import com.gymbuddy.databinding.FragmentHomeBinding
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -35,16 +37,10 @@ class HomeFragment : Fragment() {
     private fun loadStats() {
         lifecycleScope.launch {
             val db = AppDatabase.getDatabase(requireContext())
-            val calendar = Calendar.getInstance()
-            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
 
-            // Current streak
-            val currentStreak = calculateCurrentStreak(db)
-            binding.currentStreakText.text = "Current Streak: $currentStreak days"
-
-            // Longest streak
-            val longestStreak = calculateLongestStreak(db)
-            binding.longestStreakText.text = "Longest Streak: $longestStreak days"
+            // Version
+            val packageInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
+            binding.versionText.text = "Version ${packageInfo.versionName}"
 
             // Monthly workouts
             val monthlyWorkouts = countWorkoutsThisMonth(db)
@@ -52,47 +48,26 @@ class HomeFragment : Fragment() {
 
             // Yearly workouts
             val yearlyWorkouts = countWorkoutsThisYear(db)
-            binding.yearlyWorkoutsText.text = "Workouts this year: $yearlyWorkouts"
+            binding.yearlyWorkoutsText.text = "This year: $yearlyWorkouts"
 
-            // Today's exercises
-            val todayExercises = getTodayExercises(db)
-            binding.todayExercisesText.text = todayExercises.joinToString("\n") { it.title }
-        }
-    }
-
-    private suspend fun calculateCurrentStreak(db: AppDatabase): Int {
-        var streak = 0
-        val calendar = Calendar.getInstance()
-        while (true) {
-            val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
-            val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
-            val routineDay = withContext(Dispatchers.IO) {
-                db.routineDao().getByDayOfWeek(dayOfWeek)
-            }
-            val isValidDay = routineDay != null && !routineDay.isRest
-            val hasLog = withContext(Dispatchers.IO) {
-                db.workoutLogDao().getByDate(dateStr) != null
-            }
-            if (isValidDay && hasLog) {
-                streak++
-                calendar.add(Calendar.DAY_OF_MONTH, -1)
-            } else if (isValidDay) {
-                // Skipped workout day, break streak
-                break
+            // Total workouts since date
+            val (totalWorkouts, sinceDate) = countTotalWorkoutsSince(db)
+            val sinceFormatted = if (sinceDate != null) {
+                SimpleDateFormat("M/d/yy", Locale.getDefault()).format(sinceDate)
             } else {
-                // Rest day, continue streak
-                streak++
-                calendar.add(Calendar.DAY_OF_MONTH, -1)
+                "start"
             }
+            binding.totalWorkoutsText.text = "Since $sinceFormatted: $totalWorkouts"
+
+            // Dedication
+            val dedication = calculateDedication(db, sinceDate)
+            setupDedicationGauge()
+            binding.dedicationGauge.setValue(dedication.toDouble())
+            binding.dedicationText.text = "Dedication: ${dedication}%"
         }
-        return streak
     }
 
-    private suspend fun calculateLongestStreak(db: AppDatabase): Int {
-        // For simplicity, return current streak as longest for now
-        // In a real app, track historical streaks
-        return calculateCurrentStreak(db)
-    }
+
 
     private suspend fun countWorkoutsThisMonth(db: AppDatabase): Int {
         val calendar = Calendar.getInstance()
@@ -120,12 +95,53 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private suspend fun getTodayExercises(db: AppDatabase): List<Exercise> {
-        val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-        val routineDay = withContext(Dispatchers.IO) {
-            db.routineDao().getByDayOfWeek(today)
+    private suspend fun countTotalWorkoutsSince(db: AppDatabase): Pair<Int, Date?> {
+        val logs = withContext(Dispatchers.IO) {
+            db.workoutLogDao().getAll()
         }
-        return routineDay?.exercises ?: emptyList()
+        val count = logs.size
+        val sinceDate = logs.minOfOrNull { log ->
+            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(log.date) ?: Date()
+        }
+        return Pair(count, sinceDate)
+    }
+
+    private suspend fun calculateDedication(db: AppDatabase, sinceDate: Date?): Int {
+        if (sinceDate == null) return 0
+        val logs = withContext(Dispatchers.IO) {
+            db.workoutLogDao().getAll()
+        }
+        val workoutDays = logs.size
+        val today = Calendar.getInstance().time
+        val diff = today.time - sinceDate.time
+        val totalDays = (diff / (1000 * 60 * 60 * 24)).toInt() + 1 // inclusive
+        if (totalDays <= 0) return 0
+        return (workoutDays.toDouble() / totalDays * 100).toInt()
+    }
+
+    private fun setupDedicationGauge() {
+        val range1 = Range()
+        range1.color = Color.RED
+        range1.from = 0.0
+        range1.to = 33.0
+
+        val range2 = Range()
+        range2.color = Color.YELLOW
+        range2.from = 33.0
+        range2.to = 66.0
+
+        val range3 = Range()
+        range3.color = Color.GREEN
+        range3.from = 66.0
+        range3.to = 100.0
+
+        binding.dedicationGauge.addRange(range1)
+        binding.dedicationGauge.addRange(range2)
+        binding.dedicationGauge.addRange(range3)
+
+        binding.dedicationGauge.minValue = 0.0
+        binding.dedicationGauge.maxValue = 100.0
+        binding.dedicationGauge.setNeedleColor(Color.WHITE)
     }
 
     override fun onDestroyView() {
