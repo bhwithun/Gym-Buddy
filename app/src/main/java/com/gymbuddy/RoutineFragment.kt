@@ -59,8 +59,23 @@ class RoutineFragment : Fragment() {
         binding.exportButton.setOnClickListener {
             lifecycleScope.launch {
                 val days = withContext(Dispatchers.IO) { dao.getAll() }
+                val exportDays = days.map { day ->
+                    ExportRoutineDay(
+                        dayOfWeek = day.dayOfWeek,
+                        isRest = day.isRest,
+                        exercises = day.exercises.map { exercise ->
+                            ExportExercise(
+                                title = exercise.title,
+                                weight = exercise.weight,
+                                reps = exercise.reps,
+                                sets = exercise.sets,
+                                notes = exercise.notes
+                            )
+                        }
+                    )
+                }
                 val gson = GsonBuilder().setPrettyPrinting().create()
-                val json = gson.toJson(days)
+                val json = gson.toJson(exportDays)
                 val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val clip = ClipData.newPlainText("Routine", json)
                 clipboard.setPrimaryClip(clip)

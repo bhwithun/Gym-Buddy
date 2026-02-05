@@ -27,6 +27,21 @@ data class RoutineDay(
     val exercises: List<Exercise>
 )
 
+// Export-friendly classes without transient data
+data class ExportExercise(
+    val title: String,
+    val weight: Int,
+    val reps: Int,
+    val sets: Int,
+    val notes: String
+)
+
+data class ExportRoutineDay(
+    val dayOfWeek: Int,
+    val isRest: Boolean,
+    val exercises: List<ExportExercise>
+)
+
 class ExerciseDeserializer : JsonDeserializer<Exercise> {
     override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): Exercise {
         val jsonObject = json.asJsonObject
