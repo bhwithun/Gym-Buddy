@@ -38,10 +38,6 @@ class HomeFragment : Fragment() {
         lifecycleScope.launch {
             val db = AppDatabase.getDatabase(requireContext())
 
-            // Version
-            val packageInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
-            binding.versionText.text = "Version ${packageInfo.versionName}"
-
             // Monthly workouts
             val monthlyWorkouts = countWorkoutsThisMonth(db)
             binding.monthlyWorkoutsText.text = "Workouts this month: $monthlyWorkouts"

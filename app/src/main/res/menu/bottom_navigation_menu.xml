@@ -12,5 +12,9 @@
         android:id="@+id/navigation_workout"
         android:icon="@android:drawable/ic_menu_send"
         android:title="Workout" />
+    <item
+        android:id="@+id/navigation_about"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:title="About" />
 
 </menu>
