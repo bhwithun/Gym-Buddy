@@ -10,7 +10,7 @@ import com.gymbuddy.databinding.ItemRoutineDayBinding
 
 class DayAdapter(private val days: List<RoutineDayEntity>, private val onDayClick: (RoutineDayEntity) -> Unit, private val onExercisesSwapped: (Int, Int) -> Unit) : RecyclerView.Adapter<DayAdapter.DayViewHolder>() {
 
-    private val dayNames = arrayOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+    private val dayNames = arrayOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
 
     class DayViewHolder(val binding: ItemRoutineDayBinding) : RecyclerView.ViewHolder(binding.root)
 

@@ -28,13 +28,24 @@ class ExerciseAdapter(
 
         fun bind(exercise: Exercise) {
             binding.titleText.text = exercise.title
-            val wrsText = "W:${exercise.weight} R:${exercise.reps} S:${exercise.sets}"
+            val weight = exercise.weight.toString()
+            val reps = exercise.reps.toString()
+            val sets = exercise.sets.toString()
+
+            val wrsText = "W:$weight R:$reps S:$sets"
             val spannable = SpannableString(wrsText)
-            val wEnd = "W:${exercise.weight}".length
-            val rEnd = wEnd + " R:${exercise.reps}".length
-            spannable.setSpan(ForegroundColorSpan(Color.parseColor("#888888")), 0, 1, 0) // gray for W
-            spannable.setSpan(ForegroundColorSpan(Color.parseColor("#F1C40F")), wEnd + 1, wEnd + 2, 0) // yellow for R
-            spannable.setSpan(ForegroundColorSpan(Color.parseColor("#00FF00")), rEnd + 1, rEnd + 2, 0) // green for S
+
+            val wStart = 2
+            val wEnd = wStart + weight.length
+            val rStart = wEnd + 3
+            val rEnd = rStart + reps.length
+            val sStart = rEnd + 3
+            val sEnd = sStart + sets.length
+
+            spannable.setSpan(ForegroundColorSpan(Color.parseColor("#00FFFF")), wStart, wEnd, 0)
+            spannable.setSpan(ForegroundColorSpan(Color.parseColor("#FFFF00")), rStart, rEnd, 0)
+            spannable.setSpan(ForegroundColorSpan(Color.parseColor("#00FF00")), sStart, sEnd, 0)
+
             binding.wrsText.text = spannable
         }
     }

@@ -50,7 +50,7 @@ class DayDetailPageFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val dayNames = arrayOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+        val dayNames = arrayOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
         binding.dayTitle.text = dayNames[day.dayOfWeek - 1]
 
         exercises = day.exercises.toMutableList()

@@ -5,8 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    app:cardCornerRadius="16dp"
+    app:cardBackgroundColor="#045c09"
+    app:cardElevation="8dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -18,15 +19,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            app:layout_constraintGuide_percent="0.4" />
+            app:layout_constraintGuide_percent="0.3" />
 
         <TextView
             android:id="@+id/dayName"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:textSize="18sp"
             android:textStyle="bold"
             android:gravity="center"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/labelGuideline"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -39,6 +41,7 @@
             android:layout_marginStart="8dp"
             android:orientation="vertical"
             android:padding="8dp"
+            android:paddingStart="16dp"
             android:background="@drawable/item_border"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/labelGuideline"

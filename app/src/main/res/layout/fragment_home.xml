@@ -9,8 +9,8 @@
 
     <ImageView
         android:id="@+id/logoImage"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:src="@drawable/plate"
         android:contentDescription="Gym Buddy Logo"
         app:layout_constraintEnd_toEndOf="parent"
@@ -48,7 +48,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/monthlyWorkoutsText"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="0dp"
         tools:text="Workouts this year: 120" />
 
     <TextView
@@ -59,7 +59,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/yearlyWorkoutsText"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="0dp"
         tools:text="Total Workouts since 1/1/25: 500" />
 
     <com.ekn.gruzer.gaugelibrary.HalfGauge
@@ -69,7 +69,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/totalWorkoutsText"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="8dp" />
 
     <TextView
         android:id="@+id/dedicationText"
