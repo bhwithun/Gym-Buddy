@@ -34,17 +34,17 @@ class AboutFragment : Fragment() {
         binding.versionText.text = "Version ${packageInfo.versionName}"
 
         // App name with colors
-        val appName = "Gym Buddy"
+        val appName = "FitBitch"
         val spannableAppName = SpannableString(appName)
-        spannableAppName.setSpan(ForegroundColorSpan(Color.parseColor("#FFFF00")), 0, 3, 0) // Gym yellow
-        spannableAppName.setSpan(ForegroundColorSpan(Color.parseColor("#00FF00")), 4, appName.length, 0) // Buddy green
+        spannableAppName.setSpan(ForegroundColorSpan(Color.parseColor("#FFFF00")), 0, 3, 0) // Fit yellow
+        spannableAppName.setSpan(ForegroundColorSpan(Color.parseColor("#00FF00")), 3, appName.length, 0) // Bitch green
         binding.appNameText.text = spannableAppName
 
         // Credits with colors
-        val credits = "Made on Earth by Brian"
+        val credits = "Made on Earth for Sam"
         val spannableCredits = SpannableString(credits)
         spannableCredits.setSpan(ForegroundColorSpan(Color.parseColor("#00FFFF")), 8, 13, 0) // Earth cyan
-        spannableCredits.setSpan(ForegroundColorSpan(Color.parseColor("#FF6B6B")), 17, credits.length, 0) // Brian red
+        spannableCredits.setSpan(ForegroundColorSpan(Color.parseColor("#FF6B6B")), 17, credits.length, 0) // Sam red
         binding.creditsText.text = spannableCredits
     }
 
