@@ -79,6 +79,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.navigation_home -> replaceFragment(HomeFragment())
                 R.id.navigation_routine -> replaceFragment(RoutineFragment())
                 R.id.navigation_workout -> replaceFragment(WorkoutFragment())
+                R.id.navigation_analysis -> replaceFragment(AnalysisFragment())
                 R.id.navigation_about -> replaceFragment(AboutFragment())
             }
             true
