@@ -15,19 +15,42 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.5" />
 
-    <TextView
-        android:id="@+id/titleText"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/titleContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="36sp"
-        android:textStyle="bold"
-        android:textColor="#F9F72E"
-        android:background="#4DA4278D"
-        android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="Bench Press" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#F9F72E"
+            android:background="#4DA4278D"
+            android:gravity="center"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/helpIcon"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:text="Bench Press" />
+
+        <ImageView
+            android:id="@+id/helpIcon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_help"
+            android:background="?android:attr/selectableItemBackground"
+            android:padding="8dp"
+            android:contentDescription="Search exercise online"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <TextView
         android:id="@+id/weightLabel"
@@ -40,7 +63,7 @@
         android:gravity="left"
         app:layout_constraintEnd_toStartOf="@+id/verticalGuideline"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/titleText"
+        app:layout_constraintTop_toBottomOf="@+id/titleContainer"
         tools:text="Weight:" />
 
     <TextView

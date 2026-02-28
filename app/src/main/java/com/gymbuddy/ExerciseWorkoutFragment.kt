@@ -1,6 +1,8 @@
 package com.gymbuddy
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -114,6 +116,11 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         // Allow tapping full-screen notes to return to normal view
         binding.fullScreenNotesText.setOnClickListener {
             hideFullScreenNotes()
+        }
+
+        // Set up help icon click listener for Google search
+        binding.helpIcon.setOnClickListener {
+            searchExerciseOnline(exercise.title)
         }
 
 
@@ -245,7 +252,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         binding.fullScreenNotesText.text = notesText
 
         // Hide all other UI elements
-        binding.titleText.visibility = View.GONE
+        binding.titleContainer.visibility = View.GONE
         binding.weightLabel.visibility = View.GONE
         binding.weightValue.visibility = View.GONE
         binding.repsLabel.visibility = View.GONE
@@ -266,7 +273,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         binding.fullScreenNotesText.visibility = View.GONE
 
         // Show all other UI elements
-        binding.titleText.visibility = View.VISIBLE
+        binding.titleContainer.visibility = View.VISIBLE
         binding.weightLabel.visibility = View.VISIBLE
         binding.weightValue.visibility = View.VISIBLE
         binding.repsLabel.visibility = View.VISIBLE
@@ -329,6 +336,31 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         }
         updateUI()
         onUpdate(exercise)
+    }
+
+    private fun searchExerciseOnline(exerciseName: String) {
+        try {
+            // Create Google search URL for the exercise
+            val searchQuery = Uri.encode("$exerciseName exercise")
+            val searchUrl = "https://www.google.com/search?q=$searchQuery"
+
+            // Create intent to open browser
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(searchUrl))
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback: try to open Google in browser
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com"))
+                startActivity(intent)
+            } catch (e2: Exception) {
+                // If all else fails, show a toast
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    "Unable to open browser",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     override fun onDestroyView() {
