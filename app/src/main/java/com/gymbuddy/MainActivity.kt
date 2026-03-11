@@ -76,7 +76,6 @@ class MainActivity : AppCompatActivity() {
             }
 
             when (item.itemId) {
-                R.id.navigation_home -> replaceFragment(HomeFragment())
                 R.id.navigation_routine -> replaceFragment(RoutineFragment())
                 R.id.navigation_workout -> replaceFragment(WorkoutFragment())
                 R.id.navigation_analysis -> replaceFragment(AnalysisFragment())
@@ -86,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) {
-            replaceFragment(HomeFragment())
+            replaceFragment(RoutineFragment())
         }
     }
 
