@@ -1,0 +1,58 @@
+# Built application files
+*.apk
+*.aab
+*.ap_
+
+# Files for the ART/DX build system
+unaligned_*.apk
+
+# Generated files
+build/
+app/build/
+!app/build/generated/res/google-res/values/*
+!app/build/generated/res/google-res/values-{default, night}/values-*.xml
+
+# Gradle caches
+.gradle/
+local.properties
+
+# Logs
+*.log
+
+# Android Studio navigates
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Coverage results
+jacoco/
+coverage/
+
+# Dependency directories
+node_modules/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/
+!.idea/runConfigurations/
+!.idea/gradle.xml
+!.idea/libraries
+
+# Heap dumps and temporary files
+*.hprof
+
+# Downloaded archives
+*.zip
+
+# Keystore files
+*.keystore
