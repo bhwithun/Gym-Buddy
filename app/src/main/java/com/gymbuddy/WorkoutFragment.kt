@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
@@ -29,6 +30,36 @@ class WorkoutFragment : Fragment() {
     private val exercises = mutableListOf<Exercise>()
     private val smallPies = mutableListOf<ProgressPieChart>()
     private val gson = Gson()
+    private var makeupDayOfWeek: Int? = null
+    private var isMakeup = false
+
+    companion object {
+        private const val ARG_MAKEUP_DAY = "makeup_day"
+
+        fun newInstance(makeupDayOfWeek: Int): WorkoutFragment {
+            val fragment = WorkoutFragment()
+            val args = Bundle()
+            args.putInt(ARG_MAKEUP_DAY, makeupDayOfWeek)
+            fragment.arguments = args
+            return fragment
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            val day = it.getInt(ARG_MAKEUP_DAY, -1)
+            if (day != -1) {
+                makeupDayOfWeek = day
+                isMakeup = true
+            }
+        }
+    }
+
+    private fun getDayName(dayOfWeek: Int): String {
+        val days = arrayOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+        return days[dayOfWeek - 1]
+    }
 
     // ── Circle appearance constants ──
     private val CIRCLE_SIZE_DP = 42f          // Full size of each pie when not crowded
@@ -46,16 +77,21 @@ class WorkoutFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         // Set the date
-        val dateFormat = SimpleDateFormat("EEE MMM d, yyyy", Locale.getDefault())
-        binding.dateText.text = dateFormat.format(Date())
+        if (isMakeup) {
+            binding.dateText.text = "Makeup: ${getDayName(makeupDayOfWeek!!)}"
+        } else {
+            val dateFormat = SimpleDateFormat("EEE MMM d, yyyy", Locale.getDefault())
+            binding.dateText.text = dateFormat.format(Date())
+        }
+        binding.makeupLink.setOnClickListener { showMakeupDayDialog() }
         loadWorkout()
     }
 
     private fun loadWorkout() {
         lifecycleScope.launch {
-            val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+            val loadedDay = makeupDayOfWeek ?: Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
             val day = withContext(Dispatchers.IO) {
-                AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(today)
+                AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(loadedDay)
             }
             if (day?.isRest == true) {
                 Toast.makeText(requireContext(), "Rest Day!", Toast.LENGTH_SHORT).show()
@@ -99,9 +135,9 @@ class WorkoutFragment : Fragment() {
                     // Also update the routine
                     if (isAdded && context != null) {
                         lifecycleScope.launch {
-                            val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+                            val loadedDay = makeupDayOfWeek ?: Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
                             val routineDay = withContext(Dispatchers.IO) {
-                                AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(today)
+                                AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(loadedDay)
                             }
                             if (routineDay != null) {
                                 val updatedExercises = routineDay.exercises.toMutableList()
@@ -231,5 +267,17 @@ class WorkoutFragment : Fragment() {
             page.rotationY = rotation
             page.alpha = 1f - Math.abs(position) * 0.5f
         }
+    }
+
+    private fun showMakeupDayDialog() {
+        val days = arrayOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+        AlertDialog.Builder(requireContext())
+            .setTitle("Select Makeup Day")
+            .setItems(days) { _, which ->
+                val selectedDayOfWeek = which + 1 // 1 = Sunday, 2 = Monday, etc.
+                (requireActivity() as MainActivity).replaceFragment(WorkoutFragment.newInstance(selectedDayOfWeek))
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 }

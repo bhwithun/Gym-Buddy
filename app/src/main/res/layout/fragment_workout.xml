@@ -17,6 +17,20 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Fri Jan 2, 2026" />
 
+    <TextView
+        android:id="@+id/makeupLink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="makeup"
+        android:textSize="18sp"
+        android:textColor="#FF0000FF"
+        android:layout_margin="16dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?android:attr/selectableItemBackground"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <LinearLayout
         android:id="@+id/circlesContainer"
         android:layout_width="match_parent"
