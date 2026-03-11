@@ -83,7 +83,11 @@ class WorkoutFragment : Fragment() {
             val dateFormat = SimpleDateFormat("EEE MMM d, yyyy", Locale.getDefault())
             binding.dateText.text = dateFormat.format(Date())
         }
-        binding.makeupLink.setOnClickListener { showMakeupDayDialog() }
+        binding.makeupLink.setOnClickListener {
+            lifecycleScope.launch {
+                showMakeupDayDialog()
+            }
+        }
         loadWorkout()
     }
 
@@ -269,12 +273,24 @@ class WorkoutFragment : Fragment() {
         }
     }
 
-    private fun showMakeupDayDialog() {
-        val days = arrayOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+    private suspend fun showMakeupDayDialog() {
+        val allRoutineDays = withContext(Dispatchers.IO) {
+            AppDatabase.getDatabase(requireContext()).routineDao().getAll()
+        }
+        val nonRestDays = allRoutineDays.filter { !it.isRest }
+        val dayNames = arrayOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+        val availableDays = nonRestDays.map { dayNames[it.dayOfWeek - 1] }.toTypedArray()
+        val availableDayOfWeeks = nonRestDays.map { it.dayOfWeek }.toIntArray()
+
+        if (availableDays.isEmpty()) {
+            Toast.makeText(requireContext(), "No workout days available for makeup", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         AlertDialog.Builder(requireContext())
             .setTitle("Select Makeup Day")
-            .setItems(days) { _, which ->
-                val selectedDayOfWeek = which + 1 // 1 = Sunday, 2 = Monday, etc.
+            .setItems(availableDays) { _, which ->
+                val selectedDayOfWeek = availableDayOfWeeks[which]
                 (requireActivity() as MainActivity).replaceFragment(WorkoutFragment.newInstance(selectedDayOfWeek))
             }
             .setNegativeButton("Cancel", null)
