@@ -181,7 +181,14 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
                     if (exercise.completedSets >= exercise.sets) {
                         stopTimer()  // Stop any running timer when final set is completed
                     } else {
-                        startTimer()  // Start timer for next set
+                        // Calculate cooldown duration based on difficulty rating
+                        val cooldownSeconds = when (exercise.rating) {
+                            "easy" -> 19  // 20-second total countdown
+                            "good" -> 39  // 40-second total countdown
+                            "hard" -> 59  // 60-second total countdown
+                            else -> 59   // Default to hard
+                        }
+                        startTimer(cooldownSeconds)  // Start timer for next set
                     }
                 }
             }
