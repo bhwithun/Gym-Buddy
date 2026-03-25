@@ -103,22 +103,34 @@ class WorkoutFragment : Fragment() {
             } else if (day != null) {
                 val baseExercises: List<Exercise> = day.exercises
                 val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-                val existingLog = withContext(Dispatchers.IO) {
-                    AppDatabase.getDatabase(requireContext()).workoutLogDao().getByDate(dateStr)
-                }
                 exercises.clear()
-                if (existingLog != null) {
-                    // Load from log
-                    val loggedExercises: List<Exercise> = gson.fromJson(existingLog.loggedJson, object : TypeToken<List<Exercise>>() {}.type)
-                    exercises.addAll(loggedExercises)
-                } else {
-                    // Create new log
+
+                if (isMakeup) {
+                    // For makeup days, always start fresh with base exercises
                     exercises.addAll(baseExercises)
                     val plannedJson = gson.toJson(exercises.map { it.copy(completedSets = 0) })
                     val loggedJson = gson.toJson(exercises)
                     val log = WorkoutLogEntity(dateStr, plannedJson, loggedJson)
                     withContext(Dispatchers.IO) {
                         AppDatabase.getDatabase(requireContext()).workoutLogDao().insert(log)
+                    }
+                } else {
+                    val existingLog = withContext(Dispatchers.IO) {
+                        AppDatabase.getDatabase(requireContext()).workoutLogDao().getByDate(dateStr)
+                    }
+                    if (existingLog != null) {
+                        // Load from log
+                        val loggedExercises: List<Exercise> = gson.fromJson(existingLog.loggedJson, object : TypeToken<List<Exercise>>() {}.type)
+                        exercises.addAll(loggedExercises)
+                    } else {
+                        // Create new log
+                        exercises.addAll(baseExercises)
+                        val plannedJson = gson.toJson(exercises.map { it.copy(completedSets = 0) })
+                        val loggedJson = gson.toJson(exercises)
+                        val log = WorkoutLogEntity(dateStr, plannedJson, loggedJson)
+                        withContext(Dispatchers.IO) {
+                            AppDatabase.getDatabase(requireContext()).workoutLogDao().insert(log)
+                        }
                     }
                 }
 

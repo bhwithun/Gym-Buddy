@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:text="makeup"
         android:textSize="18sp"
-        android:textColor="#FF0000FF"
+        android:textColor="@color/weight_color"
         android:layout_margin="16dp"
         android:clickable="true"
         android:focusable="true"
