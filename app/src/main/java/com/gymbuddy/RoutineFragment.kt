@@ -117,6 +117,10 @@ class RoutineFragment : Fragment() {
                             withContext(Dispatchers.IO) {
                                 dao.deleteAll()
                                 dao.insertAll(*importedDays.toTypedArray())
+
+                                // Delete today's workout log so it loads fresh from the new routine
+                                val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                                AppDatabase.getDatabase(requireContext()).workoutLogDao().deleteByDate(dateStr)
                             }
                             Toast.makeText(requireContext(), "Routine imported successfully", Toast.LENGTH_SHORT).show()
                         }
