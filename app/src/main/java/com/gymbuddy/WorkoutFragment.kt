@@ -313,6 +313,8 @@ class WorkoutFragment : Fragment() {
             }
         }
 
+        val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+
         AlertDialog.Builder(requireContext())
             .setTitle("Select Makeup Day")
             .setView(listView)
@@ -320,7 +322,13 @@ class WorkoutFragment : Fragment() {
                 val selectedIndex = adapter.getSelectedPosition()
                 if (selectedIndex != -1) {
                     val selectedDayOfWeek = availableDayOfWeeks[selectedIndex]
-                    (requireActivity() as MainActivity).replaceFragment(WorkoutFragment.newInstance(selectedDayOfWeek))
+                    if (selectedDayOfWeek == today) {
+                        // Selected today - navigate to regular workout, not makeup
+                        (requireActivity() as MainActivity).replaceFragment(WorkoutFragment())
+                    } else {
+                        // Selected another day - do makeup
+                        (requireActivity() as MainActivity).replaceFragment(WorkoutFragment.newInstance(selectedDayOfWeek))
+                    }
                 }
             }
             .setNegativeButton("Cancel", null)
