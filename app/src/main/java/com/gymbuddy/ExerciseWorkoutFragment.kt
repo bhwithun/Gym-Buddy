@@ -429,50 +429,57 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
     }
 
     private fun showSetCompletedBubble() {
-        // Create floating TextView with clapping hands emoji
-        val bubbleView = TextView(requireContext()).apply {
-            text = "👏"
-            textSize = 48f
-            alpha = 1f
-        }
-
-        // Add to the root view
         val rootView = requireActivity().findViewById<ViewGroup>(android.R.id.content)
-        rootView.addView(bubbleView)
-
-        // Position at bottom center initially
         val displayMetrics = resources.displayMetrics
-        val startX = (displayMetrics.widthPixels / 2f) - 50f
+        val baseStartX = (displayMetrics.widthPixels / 2f) - 50f
         val startY = displayMetrics.heightPixels - 200f
         val endY = 100f
 
-        bubbleView.x = startX
-        bubbleView.y = startY
-
-        // Create combined animation: upward movement with side-to-side oscillation
-        val animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 2000 // 2 seconds
-            addUpdateListener { animation ->
-                val progress = animation.animatedValue as Float
-
-                // Upward movement
-                bubbleView.y = startY - (startY - endY) * progress
-
-                // Side-to-side oscillation (sine wave)
-                val oscillation = kotlin.math.sin(progress * 4 * Math.PI).toFloat() * 30f
-                bubbleView.x = startX + oscillation
-
-                // Fade out as it goes up
-                bubbleView.alpha = 1f - progress
+        // Create one emoji bubble for each completed set
+        for (i in 0 until exercise.completedSets) {
+            // Create floating TextView with clapping hands emoji
+            val bubbleView = TextView(requireContext()).apply {
+                text = "👏"
+                textSize = 48f
+                alpha = 1f
             }
-            addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator) {
-                    rootView.removeView(bubbleView)
-                }
-            })
-        }
 
-        animator.start()
+            // Add to the root view
+            rootView.addView(bubbleView)
+
+            // Position with slight offset for each bubble
+            val offsetX = (i - (exercise.completedSets - 1) / 2f) * 60f // Spread bubbles horizontally
+            val startX = baseStartX + offsetX
+
+            bubbleView.x = startX
+            bubbleView.y = startY
+
+            // Create combined animation: upward movement with side-to-side oscillation
+            val animator = ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = 2000 // 2 seconds
+                startDelay = i * 100L // Stagger start times slightly
+                addUpdateListener { animation ->
+                    val progress = animation.animatedValue as Float
+
+                    // Upward movement
+                    bubbleView.y = startY - (startY - endY) * progress
+
+                    // Side-to-side oscillation (sine wave)
+                    val oscillation = kotlin.math.sin(progress * 4 * Math.PI).toFloat() * 30f
+                    bubbleView.x = startX + oscillation
+
+                    // Fade out as it goes up
+                    bubbleView.alpha = 1f - progress
+                }
+                addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        rootView.removeView(bubbleView)
+                    }
+                })
+            }
+
+            animator.start()
+        }
     }
 
     private fun updateUI() {
