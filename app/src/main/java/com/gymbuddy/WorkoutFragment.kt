@@ -289,21 +289,28 @@ class WorkoutFragment : Fragment() {
         val allRoutineDays = withContext(Dispatchers.IO) {
             AppDatabase.getDatabase(requireContext()).routineDao().getAll()
         }
-        val nonRestDays = allRoutineDays.filter { !it.isRest }
         val dayNames = arrayOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
-        val availableDays = nonRestDays.map { dayNames[it.dayOfWeek - 1] }.toTypedArray()
-        val availableDayOfWeeks = nonRestDays.map { it.dayOfWeek }.toIntArray()
+        val availableDays = allRoutineDays.map {
+            val baseName = dayNames[it.dayOfWeek - 1]
+            if (it.isRest) "$baseName (Rest)" else baseName
+        }.toTypedArray()
+        val availableDayOfWeeks = allRoutineDays.map { it.dayOfWeek }.toIntArray()
+        val isRestDay = allRoutineDays.map { it.isRest }.toBooleanArray()
 
         if (availableDays.isEmpty()) {
-            Toast.makeText(requireContext(), "No workout days available for makeup", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "No days available for makeup", Toast.LENGTH_SHORT).show()
             return
         }
 
         AlertDialog.Builder(requireContext())
             .setTitle("Select Makeup Day")
             .setItems(availableDays) { _, which ->
-                val selectedDayOfWeek = availableDayOfWeeks[which]
-                (requireActivity() as MainActivity).replaceFragment(WorkoutFragment.newInstance(selectedDayOfWeek))
+                if (isRestDay[which]) {
+                    Toast.makeText(requireContext(), "Rest days cannot be selected for makeup", Toast.LENGTH_SHORT).show()
+                } else {
+                    val selectedDayOfWeek = availableDayOfWeeks[which]
+                    (requireActivity() as MainActivity).replaceFragment(WorkoutFragment.newInstance(selectedDayOfWeek))
+                }
             }
             .setNegativeButton("Cancel", null)
             .show()
