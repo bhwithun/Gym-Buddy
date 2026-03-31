@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.ListView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
@@ -302,13 +303,23 @@ class WorkoutFragment : Fragment() {
             return
         }
 
+        val listView = ListView(requireContext())
+        val adapter = MakeupDayAdapter(requireContext(), availableDays, isRestDay)
+        listView.adapter = adapter
+
+        listView.setOnItemClickListener { _, _, position, _ ->
+            if (!isRestDay[position]) {
+                adapter.setSelectedPosition(position)
+            }
+        }
+
         AlertDialog.Builder(requireContext())
             .setTitle("Select Makeup Day")
-            .setItems(availableDays) { _, which ->
-                if (isRestDay[which]) {
-                    Toast.makeText(requireContext(), "Rest days cannot be selected for makeup", Toast.LENGTH_SHORT).show()
-                } else {
-                    val selectedDayOfWeek = availableDayOfWeeks[which]
+            .setView(listView)
+            .setPositiveButton("OK") { _, _ ->
+                val selectedIndex = adapter.getSelectedPosition()
+                if (selectedIndex != -1) {
+                    val selectedDayOfWeek = availableDayOfWeeks[selectedIndex]
                     (requireActivity() as MainActivity).replaceFragment(WorkoutFragment.newInstance(selectedDayOfWeek))
                 }
             }
