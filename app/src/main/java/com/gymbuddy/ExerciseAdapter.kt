@@ -42,9 +42,10 @@ class ExerciseAdapter(
             val sStart = rEnd + 3
             val sEnd = sStart + sets.length
 
-            spannable.setSpan(ForegroundColorSpan(Color.parseColor("#FFFF00")), wStart, wEnd, 0)
-            spannable.setSpan(ForegroundColorSpan(Color.parseColor("#00FFFF")), rStart, rEnd, 0)
-            spannable.setSpan(ForegroundColorSpan(Color.parseColor("#00FF00")), sStart, sEnd, 0)
+            val context = binding.root.context
+            spannable.setSpan(ForegroundColorSpan(context.getColor(R.color.weight_color)), wStart, wEnd, 0)
+            spannable.setSpan(ForegroundColorSpan(context.getColor(R.color.reps_color)), rStart, rEnd, 0)
+            spannable.setSpan(ForegroundColorSpan(context.getColor(R.color.sets_color)), sStart, sEnd, 0)
 
             binding.wrsText.text = spannable
         }

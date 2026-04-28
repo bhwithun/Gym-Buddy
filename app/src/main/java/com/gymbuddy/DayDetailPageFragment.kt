@@ -60,6 +60,11 @@ class DayDetailPageFragment : Fragment() {
             override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
                 val fromPosition = viewHolder.adapterPosition
                 val toPosition = target.adapterPosition
+
+                // Add visual feedback during move
+                viewHolder.itemView.alpha = 0.8f
+                target.itemView.alpha = 0.9f
+
                 exercises.add(toPosition, exercises.removeAt(fromPosition))
                 adapter.notifyItemMoved(fromPosition, toPosition)
                 saveToDb()
@@ -68,6 +73,43 @@ class DayDetailPageFragment : Fragment() {
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 // No swipe actions
+            }
+
+            override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+                super.onSelectedChanged(viewHolder, actionState)
+
+                when (actionState) {
+                    ItemTouchHelper.ACTION_STATE_DRAG -> {
+                        // Item is being dragged - add visual feedback
+                        viewHolder?.itemView?.apply {
+                            elevation = 16f
+                            alpha = 0.8f
+                        }
+                    }
+                    ItemTouchHelper.ACTION_STATE_IDLE -> {
+                        // Drag ended - reset visual state
+                        viewHolder?.itemView?.apply {
+                            elevation = 4f
+                            alpha = 1.0f
+                        }
+                        // Reset all items to normal state
+                        for (i in 0 until binding.exercisesRecyclerView.childCount) {
+                            binding.exercisesRecyclerView.getChildAt(i).apply {
+                                elevation = 4f
+                                alpha = 1.0f
+                            }
+                        }
+                    }
+                }
+            }
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                // Ensure visual state is reset
+                viewHolder.itemView.apply {
+                    elevation = 4f
+                    alpha = 1.0f
+                }
             }
         })
         itemTouchHelper.attachToRecyclerView(binding.exercisesRecyclerView)

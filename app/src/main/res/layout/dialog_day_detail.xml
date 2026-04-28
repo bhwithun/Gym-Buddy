@@ -5,26 +5,31 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/rounded_cyan_background"
+    android:background="@color/background"
     android:padding="16dp">
 
     <TextView
         android:id="@+id/titleText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="drag to re-order"
-        android:textSize="18sp"
+        android:text="Drag to Reorder Exercises"
+        android:textSize="20sp"
         android:textStyle="bold"
+        android:textColor="@color/onSurface"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/closeButton"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageButton
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/closeButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@android:drawable/ic_menu_close_clear_cancel"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        app:icon="@android:drawable/ic_menu_close_clear_cancel"
+        app:iconTint="@color/onSurfaceVariant"
+        app:backgroundTint="@android:color/transparent"
+        app:cornerRadius="24dp"
         android:contentDescription="Close"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

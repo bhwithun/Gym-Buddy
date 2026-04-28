@@ -21,31 +21,47 @@ class DayAdapter(private val days: List<RoutineDayEntity>, private val onDayClic
 
     override fun onBindViewHolder(holder: DayViewHolder, position: Int) {
         val day = days[position]
-        holder.binding.dayName.text = dayNames[day.dayOfWeek - 1]
+        val context = holder.itemView.context
 
-        // Hide all exercise views first
-        holder.binding.exercise1.visibility = View.GONE
-        holder.binding.exercise2.visibility = View.GONE
-        holder.binding.exercise3.visibility = View.GONE
-        holder.binding.exercise4.visibility = View.GONE
-        holder.binding.exercise5.visibility = View.GONE
-        holder.binding.restText.visibility = View.GONE
+        // Highlight today's day
+        val today = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)
+        val isToday = day.dayOfWeek == today
+        holder.binding.dayName.text = dayNames[day.dayOfWeek - 1]
+        holder.binding.dayName.setTextColor(
+            if (isToday) context.getColor(R.color.secondary)
+            else context.getColor(R.color.onSurface)
+        )
+
+        // Clear existing dynamic views
+        holder.binding.exerciseBox.removeAllViews()
 
         if (day.isRest) {
-            holder.binding.restText.visibility = View.VISIBLE
+            val restText = android.widget.TextView(context).apply {
+                text = "Rest Day"
+                textSize = 14f
+                setTypeface(null, android.graphics.Typeface.ITALIC)
+                setTextColor(context.getColor(R.color.onSurfaceVariant))
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+            holder.binding.exerciseBox.addView(restText)
         } else {
-            val textViews = listOf(
-                holder.binding.exercise1,
-                holder.binding.exercise2,
-                holder.binding.exercise3,
-                holder.binding.exercise4,
-                holder.binding.exercise5
-            )
-            for (i in day.exercises.indices) {
-                if (i < textViews.size) {
-                    textViews[i].text = day.exercises[i].title
-                    textViews[i].visibility = View.VISIBLE
+            // Add all exercises dynamically
+            for (exercise in day.exercises) {
+                val exerciseText = android.widget.TextView(context).apply {
+                    text = exercise.title
+                    textSize = 14f
+                    setTextColor(context.getColor(R.color.onSurface))
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        bottomMargin = (4 * context.resources.displayMetrics.density).toInt() // 4dp margin
+                    }
                 }
+                holder.binding.exerciseBox.addView(exerciseText)
             }
         }
 
@@ -59,15 +75,44 @@ class DayAdapter(private val days: List<RoutineDayEntity>, private val onDayClic
 
         holder.itemView.setOnDragListener { v, event ->
             when (event.action) {
+                android.view.DragEvent.ACTION_DRAG_STARTED -> {
+                    // Highlight potential drop target
+                    v.alpha = 0.7f
+                    v.elevation = 16f
+                    true
+                }
+                android.view.DragEvent.ACTION_DRAG_ENTERED -> {
+                    // More prominent highlight when hovering
+                    v.alpha = 0.9f
+                    v.elevation = 24f
+                    true
+                }
+                android.view.DragEvent.ACTION_DRAG_EXITED -> {
+                    // Return to drag-started state
+                    v.alpha = 0.7f
+                    v.elevation = 16f
+                    true
+                }
+                android.view.DragEvent.ACTION_DRAG_ENDED -> {
+                    // Reset visual state
+                    v.alpha = 1.0f
+                    v.elevation = 8f
+                    true
+                }
                 android.view.DragEvent.ACTION_DROP -> {
+                    // Reset visual state immediately
+                    v.alpha = 1.0f
+                    v.elevation = 8f
+
                     val clipData = event.clipData
                     if (clipData != null && clipData.itemCount > 0) {
                         val draggedDayOfWeek = clipData.getItemAt(0).text.toString().toInt()
                         onExercisesSwapped(draggedDayOfWeek, day.dayOfWeek)
                     }
+                    true
                 }
+                else -> true
             }
-            true
         }
 
         holder.itemView.setOnClickListener { onDayClick(day) }
