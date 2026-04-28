@@ -78,6 +78,7 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.navigation_routine -> replaceFragment(RoutineFragment())
                 R.id.navigation_workout -> replaceFragment(WorkoutFragment())
+                R.id.navigation_protein -> replaceFragment(ProteinFragment())
                 R.id.navigation_about -> replaceFragment(AboutFragment())
             }
             true

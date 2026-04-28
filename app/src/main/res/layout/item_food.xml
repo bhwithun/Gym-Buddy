@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:cardBackgroundColor="@color/surface"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="2dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Food name and protein amount -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:id="@+id/foodNameText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Chicken Breast (palm-sized portion)"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/onSurface"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/proteinText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="35g"
+                    android:textSize="16sp"
+                    android:textColor="@color/secondary"
+                    android:textStyle="bold"
+                    android:layout_marginStart="8dp" />
+
+            </LinearLayout>
+
+            <!-- Slider -->
+            <SeekBar
+                android:id="@+id/portionsSlider"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="5"
+                android:progress="0"
+                android:progressTint="@color/primary"
+                android:thumbTint="@color/primary"
+                android:progressBackgroundTint="@color/surfaceVariant"
+                android:thumb="@drawable/slider_thumb"
+                android:minHeight="12dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</layout>

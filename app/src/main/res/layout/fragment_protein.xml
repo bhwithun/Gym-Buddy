@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/background">
+
+        <!-- Sticky Header -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/headerContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:layout_marginBottom="8dp"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="6dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/proteinAmountText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="0g / 120g"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/onSurface"
+                        android:gravity="center" />
+
+                    <ImageButton
+                        android:id="@+id/settingsButton"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_preferences"
+                        android:background="?android:attr/selectableItemBackground"
+                        android:contentDescription="Settings"
+                        android:tint="@color/onSurfaceVariant" />
+
+                </LinearLayout>
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="10dp"
+                    android:layout_marginTop="12dp"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressTint="@color/secondary"
+                    android:progressBackgroundTint="@color/surfaceVariant" />
+
+                <TextView
+                    android:id="@+id/percentageText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="0%"
+                    android:textSize="14sp"
+                    android:textColor="@color/onSurfaceVariant"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/settingsInfoText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="0.8g/lb • Building muscle"
+                    android:textSize="12sp"
+                    android:textColor="@color/onSurfaceVariant"
+                    android:gravity="center"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="8dp" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Food List -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/foodRecyclerView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_margin="16dp"
+            android:layout_marginTop="8dp"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/headerContainer"
+            tools:itemCount="12"
+            tools:listitem="@layout/item_food" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
