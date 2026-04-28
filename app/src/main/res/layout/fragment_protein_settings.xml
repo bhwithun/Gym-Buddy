@@ -38,7 +38,7 @@
                         android:src="@android:drawable/ic_menu_revert"
                         android:background="?android:attr/selectableItemBackground"
                         android:contentDescription="Back"
-                        android:tint="@color/onSurface" />
+                        app:tint="@color/onSurface" />
 
                     <TextView
                         android:layout_width="0dp"

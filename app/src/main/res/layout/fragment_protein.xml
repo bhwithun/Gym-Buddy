@@ -34,6 +34,15 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
+                    <ImageButton
+                        android:id="@+id/resetButton"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_rotate"
+                        android:background="?android:attr/selectableItemBackground"
+                        android:contentDescription="Reset sliders"
+                        app:tint="@color/onSurfaceVariant" />
+
                     <TextView
                         android:id="@+id/proteinAmountText"
                         android:layout_width="0dp"
@@ -52,7 +61,7 @@
                         android:src="@android:drawable/ic_menu_preferences"
                         android:background="?android:attr/selectableItemBackground"
                         android:contentDescription="Settings"
-                        android:tint="@color/onSurfaceVariant" />
+                        app:tint="@color/onSurfaceVariant" />
 
                 </LinearLayout>
 

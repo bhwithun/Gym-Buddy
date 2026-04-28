@@ -1,5 +1,9 @@
 package com.gymbuddy
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -26,7 +30,6 @@ class ProteinFragment : Fragment() {
     private lateinit var settings: ProteinSettings
     private lateinit var todayLog: DailyProteinLog
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    private var hasShownResetPrompt = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -44,6 +47,10 @@ class ProteinFragment : Fragment() {
     }
 
     private fun setupUI() {
+        binding.resetButton.setOnClickListener {
+            resetAllSliders()
+        }
+
         binding.settingsButton.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, ProteinSettingsFragment())
@@ -89,9 +96,6 @@ class ProteinFragment : Fragment() {
         val goal = settings.getDailyGoal()
         val percentage = if (goal > 0) (totalProtein / goal * 100).toInt() else 0
 
-        // Check if we should show reset prompt (new day with previous values)
-        checkForResetPrompt()
-
         // Update header
         binding.proteinAmountText.text = "${totalProtein}g / ${goal.toInt()}g"
         binding.percentageText.text = "$percentage%"
@@ -117,36 +121,63 @@ class ProteinFragment : Fragment() {
         }
     }
 
-    private fun checkForResetPrompt() {
-        if (hasShownResetPrompt) return
+    private fun resetAllSliders() {
+        lifecycleScope.launch {
+            val db = AppDatabase.getDatabase(requireContext())
+            val today = dateFormat.format(Date())
+            val resetLog = DailyProteinLog(today) // Creates empty log with all zeros
+            db.dailyProteinLogDao().insertOrUpdate(resetLog)
+            todayLog = resetLog
+            updateUI()
+            showResetBubble()
+        }
+    }
 
-        // Check if todayLog has any non-zero values (indicating it was carried over from yesterday)
-        val hasPreviousValues = FoodData.foodList.any { food ->
-            todayLog.getPortionsForFood(food.id) > 0
+    private fun showResetBubble() {
+        // Create floating TextView with sponge emoji
+        val bubbleView = TextView(requireContext()).apply {
+            text = "🧽"
+            textSize = 48f
+            alpha = 1f
         }
 
-        if (hasPreviousValues) {
-            // Show reset prompt
-            androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle("New Day")
-                .setMessage("Would you like to reset all sliders to zero for today?")
-                .setPositiveButton("Reset") { _, _ ->
-                    // Reset all values to zero
-                    lifecycleScope.launch {
-                        val db = AppDatabase.getDatabase(requireContext())
-                        val today = dateFormat.format(Date())
-                        val resetLog = DailyProteinLog(today) // Creates empty log with all zeros
-                        db.dailyProteinLogDao().insertOrUpdate(resetLog)
-                        todayLog = resetLog
-                        updateUI()
-                    }
+        // Add to the root view
+        val rootView = requireActivity().findViewById<ViewGroup>(android.R.id.content)
+        rootView.addView(bubbleView)
+
+        // Position at bottom center initially
+        val displayMetrics = resources.displayMetrics
+        val startX = (displayMetrics.widthPixels / 2f) - 50f
+        val startY = displayMetrics.heightPixels - 200f
+        val endY = 100f
+
+        bubbleView.x = startX
+        bubbleView.y = startY
+
+        // Create combined animation: upward movement with side-to-side oscillation
+        val animator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 2000 // 2 seconds
+            addUpdateListener { animation ->
+                val progress = animation.animatedValue as Float
+
+                // Upward movement
+                bubbleView.y = startY - (startY - endY) * progress
+
+                // Side-to-side oscillation (sine wave)
+                val oscillation = kotlin.math.sin(progress * 4 * Math.PI).toFloat() * 30f
+                bubbleView.x = startX + oscillation
+
+                // Fade out as it goes up
+                bubbleView.alpha = 1f - progress
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    rootView.removeView(bubbleView)
                 }
-                .setNegativeButton("Keep Values", null)
-                .setCancelable(false)
-                .show()
-
-            hasShownResetPrompt = true
+            })
         }
+
+        animator.start()
     }
 
     private fun updateTotalsInRealTime() {
