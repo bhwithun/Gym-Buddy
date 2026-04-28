@@ -270,6 +270,7 @@ class FoodAdapter(
             // Update protein text to show calculation: "3 x 12g = 36g" or "0 x 12g = 0g"
             binding.proteinText.text = "$portions × ${food.proteinPerPortion}g = ${totalProtein}g"
 
+            binding.portionsSlider.max = food.maxPortions
             binding.portionsSlider.progress = portions
 
             binding.portionsSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
