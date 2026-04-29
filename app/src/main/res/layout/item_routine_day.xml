@@ -9,95 +9,47 @@
     app:cardBackgroundColor="@color/surface"
     app:cardElevation="8dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:padding="16dp">
 
-        <androidx.constraintlayout.widget.Guideline
-            android:id="@+id/labelGuideline"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            app:layout_constraintGuide_percent="0.3" />
-
+        <!-- Day Heading -->
         <TextView
             android:id="@+id/dayName"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:textSize="18sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:gravity="center"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/labelGuideline"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            android:textColor="@color/onSurface"
+            android:layout_marginBottom="16dp"
             tools:text="Monday" />
 
-        <LinearLayout
-            android:id="@+id/exerciseBox"
-            android:layout_width="0dp"
+        <!-- Exercise Grid Container -->
+        <GridLayout
+            android:id="@+id/exerciseGrid"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:orientation="vertical"
-            android:padding="8dp"
-            android:paddingStart="16dp"
-            android:background="@drawable/item_border"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/labelGuideline"
-            app:layout_constraintTop_toTopOf="parent">
+            android:columnCount="2"
+            android:rowCount="1"
+            android:layout_marginTop="8dp">
 
-            <TextView
-                android:id="@+id/exercise1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:visibility="gone"
-                tools:text="Pushups" />
-
-            <TextView
-                android:id="@+id/exercise2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:visibility="gone"
-                tools:text="Pullups" />
-
-            <TextView
-                android:id="@+id/exercise3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:visibility="gone"
-                tools:text="Squats" />
-
-            <TextView
-                android:id="@+id/exercise4"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:visibility="gone"
-                tools:text="Bench Press" />
-
-            <TextView
-                android:id="@+id/exercise5"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:visibility="gone"
-                tools:text="Curls" />
-
+            <!-- Rest Day Text (shown when no exercises) -->
             <TextView
                 android:id="@+id/restText"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Rest Day"
-                android:textSize="14sp"
+                android:textSize="16sp"
                 android:textStyle="italic"
+                android:textColor="@color/onSurfaceVariant"
+                android:layout_columnSpan="2"
+                android:layout_gravity="center"
                 android:visibility="gone" />
 
-        </LinearLayout>
+        </GridLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </androidx.cardview.widget.CardView>

@@ -1,14 +1,11 @@
 package com.gymbuddy
 
-import android.content.ClipData
-import android.content.ClipDescription
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.gymbuddy.databinding.ItemRoutineDayBinding
 
-class DayAdapter(private val days: List<RoutineDayEntity>, private val onDayClick: (RoutineDayEntity) -> Unit, private val onExercisesSwapped: (Int, Int) -> Unit) : RecyclerView.Adapter<DayAdapter.DayViewHolder>() {
+class DayAdapter(private val days: List<RoutineDayEntity>, private val onDayClick: (RoutineDayEntity) -> Unit) : RecyclerView.Adapter<DayAdapter.DayViewHolder>() {
 
     private val dayNames = arrayOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
 
@@ -23,95 +20,94 @@ class DayAdapter(private val days: List<RoutineDayEntity>, private val onDayClic
         val day = days[position]
         val context = holder.itemView.context
 
-        // Highlight today's day
-        val today = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)
-        val isToday = day.dayOfWeek == today
+        // Day name in white
         holder.binding.dayName.text = dayNames[day.dayOfWeek - 1]
-        holder.binding.dayName.setTextColor(
-            if (isToday) context.getColor(R.color.secondary)
-            else context.getColor(R.color.onSurface)
-        )
+        holder.binding.dayName.setTextColor(context.getColor(R.color.onSurface))
 
-        // Clear existing dynamic views
-        holder.binding.exerciseBox.removeAllViews()
+        // Clear existing dynamic views from grid
+        holder.binding.exerciseGrid.removeAllViews()
 
         if (day.isRest) {
-            val restText = android.widget.TextView(context).apply {
-                text = "Rest Day"
-                textSize = 14f
-                setTypeface(null, android.graphics.Typeface.ITALIC)
-                setTextColor(context.getColor(R.color.onSurfaceVariant))
-                layoutParams = android.widget.LinearLayout.LayoutParams(
-                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-            }
-            holder.binding.exerciseBox.addView(restText)
+            // Show rest day text
+            holder.binding.restText.visibility = android.view.View.VISIBLE
         } else {
-            // Add all exercises dynamically
+            // Hide rest day text
+            holder.binding.restText.visibility = android.view.View.GONE
+
+            // Add exercise cards to grid - all same color (surfaceVariant)
             for (exercise in day.exercises) {
-                val exerciseText = android.widget.TextView(context).apply {
+
+                val exerciseCard = androidx.cardview.widget.CardView(context).apply {
+                    layoutParams = android.widget.GridLayout.LayoutParams().apply {
+                        width = 0
+                        height = android.widget.GridLayout.LayoutParams.WRAP_CONTENT
+                        columnSpec = android.widget.GridLayout.spec(android.widget.GridLayout.UNDEFINED, 1f)
+                        setMargins(
+                            (6 * context.resources.displayMetrics.density).toInt(), // 6dp margin
+                            (6 * context.resources.displayMetrics.density).toInt(),
+                            (6 * context.resources.displayMetrics.density).toInt(),
+                            (6 * context.resources.displayMetrics.density).toInt()
+                        )
+                    }
+                    radius = (12 * context.resources.displayMetrics.density) // 12dp corner radius
+                    cardElevation = (6 * context.resources.displayMetrics.density) // 6dp elevation
+                    setCardBackgroundColor(context.getColor(R.color.surfaceVariant))
+                }
+
+                // Create content for the card
+                val cardContent = android.widget.LinearLayout(context).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    setPadding(
+                        (16 * context.resources.displayMetrics.density).toInt(), // 16dp padding
+                        (16 * context.resources.displayMetrics.density).toInt(),
+                        (16 * context.resources.displayMetrics.density).toInt(),
+                        (16 * context.resources.displayMetrics.density).toInt()
+                    )
+                }
+
+                // Exercise title in bright white
+                val titleText = android.widget.TextView(context).apply {
                     text = exercise.title
-                    textSize = 14f
+                    textSize = 16f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
                     setTextColor(context.getColor(R.color.onSurface))
                     layoutParams = android.widget.LinearLayout.LayoutParams(
                         android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
                         android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                }
+                cardContent.addView(titleText)
+
+                // Exercise details (W:R:S format) with colored text
+                val wrsText = "W:${exercise.weight} R:${exercise.reps} S:${exercise.sets}"
+                val spannable = android.text.SpannableString(wrsText)
+
+                val wStart = 2
+                val wEnd = wStart + exercise.weight.toString().length
+                val rStart = wEnd + 3
+                val rEnd = rStart + exercise.reps.toString().length
+                val sStart = rEnd + 3
+                val sEnd = sStart + exercise.sets.toString().length
+
+                spannable.setSpan(android.text.style.ForegroundColorSpan(context.getColor(R.color.secondary)), wStart, wEnd, 0)
+                spannable.setSpan(android.text.style.ForegroundColorSpan(context.getColor(R.color.weight_color)), rStart, rEnd, 0)
+                spannable.setSpan(android.text.style.ForegroundColorSpan(context.getColor(R.color.sets_color)), sStart, sEnd, 0)
+
+                val detailsText = android.widget.TextView(context).apply {
+                    text = spannable
+                    textSize = 14f
+                    setTextColor(context.getColor(R.color.onSurfaceVariant))
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
                     ).apply {
-                        bottomMargin = (4 * context.resources.displayMetrics.density).toInt() // 4dp margin
+                        topMargin = (6 * context.resources.displayMetrics.density).toInt() // 6dp top margin
                     }
                 }
-                holder.binding.exerciseBox.addView(exerciseText)
-            }
-        }
+                cardContent.addView(detailsText)
 
-        // Set up drag and drop
-        holder.binding.exerciseBox.setOnLongClickListener {
-            val clipData = ClipData.newPlainText("dayOfWeek", day.dayOfWeek.toString())
-            val dragShadow = View.DragShadowBuilder(it)
-            it.startDragAndDrop(clipData, dragShadow, null, 0)
-            true
-        }
-
-        holder.itemView.setOnDragListener { v, event ->
-            when (event.action) {
-                android.view.DragEvent.ACTION_DRAG_STARTED -> {
-                    // Highlight potential drop target
-                    v.alpha = 0.7f
-                    v.elevation = 16f
-                    true
-                }
-                android.view.DragEvent.ACTION_DRAG_ENTERED -> {
-                    // More prominent highlight when hovering
-                    v.alpha = 0.9f
-                    v.elevation = 24f
-                    true
-                }
-                android.view.DragEvent.ACTION_DRAG_EXITED -> {
-                    // Return to drag-started state
-                    v.alpha = 0.7f
-                    v.elevation = 16f
-                    true
-                }
-                android.view.DragEvent.ACTION_DRAG_ENDED -> {
-                    // Reset visual state
-                    v.alpha = 1.0f
-                    v.elevation = 8f
-                    true
-                }
-                android.view.DragEvent.ACTION_DROP -> {
-                    // Reset visual state immediately
-                    v.alpha = 1.0f
-                    v.elevation = 8f
-
-                    val clipData = event.clipData
-                    if (clipData != null && clipData.itemCount > 0) {
-                        val draggedDayOfWeek = clipData.getItemAt(0).text.toString().toInt()
-                        onExercisesSwapped(draggedDayOfWeek, day.dayOfWeek)
-                    }
-                    true
-                }
-                else -> true
+                exerciseCard.addView(cardContent)
+                holder.binding.exerciseGrid.addView(exerciseCard)
             }
         }
 
