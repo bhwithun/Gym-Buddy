@@ -3,6 +3,8 @@ package com.gymbuddy
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
@@ -11,10 +13,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import com.gymbuddy.databinding.FragmentProteinBinding
 import com.gymbuddy.databinding.ItemFoodBinding
 import kotlinx.coroutines.launch
@@ -47,6 +53,14 @@ class ProteinFragment : Fragment() {
     }
 
     private fun setupUI() {
+        binding.exportFoodButton.setOnClickListener {
+            exportFoodOptions()
+        }
+
+        binding.importFoodButton.setOnClickListener {
+            importFoodOptions()
+        }
+
         binding.resetButton.setOnClickListener {
             resetAllSliders()
         }
@@ -59,7 +73,8 @@ class ProteinFragment : Fragment() {
         }
 
         binding.foodRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-        val adapter = FoodAdapter(FoodData.foodList, { foodId, portions ->
+        val foodList = FoodData.getFoodList(requireContext())
+        val adapter = FoodAdapter(foodList, { foodId, portions ->
             updateFoodPortions(foodId, portions)
         }, {
             updateTotalsInRealTime()
@@ -92,7 +107,8 @@ class ProteinFragment : Fragment() {
     }
 
     private fun updateUI() {
-        val totalProtein = todayLog.getTotalProtein(FoodData.foodList)
+        val foodList = FoodData.getFoodList(requireContext())
+        val totalProtein = todayLog.getTotalProtein(foodList)
         val goal = settings.getDailyGoal()
         val percentage = if (goal > 0) (totalProtein / goal * 100).toInt() else 0
 
@@ -183,8 +199,9 @@ class ProteinFragment : Fragment() {
     private fun updateTotalsInRealTime() {
         // Calculate total protein from all current slider positions
         var newTotalProtein = 0
+        val foodList = FoodData.getFoodList(requireContext())
         val adapter = binding.foodRecyclerView.adapter as? FoodAdapter
-        for (food in FoodData.foodList) {
+        for (food in foodList) {
             val portions = adapter?.getCurrentSliderValue(food.id) ?: 0
             newTotalProtein += portions * food.proteinPerPortion
         }
@@ -204,6 +221,52 @@ class ProteinFragment : Fragment() {
             else -> Color.RED
         }
         binding.progressBar.progressTintList = android.content.res.ColorStateList.valueOf(color)
+    }
+
+    private fun exportFoodOptions() {
+        val foodList = FoodData.getFoodList(requireContext())
+        val gson = GsonBuilder().setPrettyPrinting().create()
+        val json = gson.toJson(foodList)
+        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("Food Options", json)
+        clipboard.setPrimaryClip(clip)
+        Toast.makeText(requireContext(), "Food options exported to clipboard", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun importFoodOptions() {
+        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = clipboard.primaryClip
+        if (clip != null && clip.itemCount > 0) {
+            val json = clip.getItemAt(0).text.toString()
+            try {
+                val type = object : TypeToken<List<FoodItem>>() {}.type
+                val importedFoodList: List<FoodItem> = Gson().fromJson(json, type)
+
+                if (importedFoodList.isNotEmpty()) {
+                    FoodData.saveFoodList(requireContext(), importedFoodList)
+                    refreshFoodList()
+                    Toast.makeText(requireContext(), "Food options imported successfully", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(requireContext(), "Invalid food list: cannot be empty", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Invalid JSON format", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(requireContext(), "No data in clipboard", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun refreshFoodList() {
+        val foodList = FoodData.getFoodList(requireContext())
+        val adapter = FoodAdapter(foodList, { foodId, portions ->
+            updateFoodPortions(foodId, portions)
+        }, {
+            updateTotalsInRealTime()
+        })
+        binding.foodRecyclerView.adapter = adapter
+        // Reload data to update calculations
+        loadData()
     }
 
     override fun onResume() {

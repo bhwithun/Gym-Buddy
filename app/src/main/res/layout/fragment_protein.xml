@@ -8,6 +8,36 @@
         android:layout_height="match_parent"
         android:background="@color/background">
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/exportFoodButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:text="Export Food Options"
+            android:textColor="@color/onPrimary"
+            app:backgroundTint="@color/primary"
+            app:layout_constraintEnd_toStartOf="@+id/importFoodButton"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:cornerRadius="8dp"
+            app:icon="@android:drawable/ic_menu_save"
+            app:iconTint="@color/onPrimary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/importFoodButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:text="Import Food Options"
+            android:textColor="@color/onPrimary"
+            app:backgroundTint="@color/primary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/exportFoodButton"
+            app:layout_constraintTop_toTopOf="parent"
+            app:cornerRadius="8dp"
+            app:icon="@android:drawable/ic_menu_upload"
+            app:iconTint="@color/onPrimary" />
+
         <!-- Sticky Header -->
         <androidx.cardview.widget.CardView
             android:id="@+id/headerContainer"
@@ -20,7 +50,7 @@
             app:cardElevation="6dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toBottomOf="@+id/exportFoodButton">
 
             <LinearLayout
                 android:layout_width="match_parent"

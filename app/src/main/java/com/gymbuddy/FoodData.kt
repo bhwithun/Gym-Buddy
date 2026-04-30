@@ -1,7 +1,11 @@
 package com.gymbuddy
 
+import android.content.Context
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+
 object FoodData {
-    val foodList = listOf(
+    private val defaultFoodList = listOf(
         FoodItem("cereal", "Cereal with milk", "1 bowl", 13, 4),
         FoodItem("egg", "Whole egg", "hard boiled", 6),
         FoodItem("shake", "Protein shake", "with milk", 45, 3),
@@ -19,7 +23,28 @@ object FoodData {
         FoodItem("nuts", "Salted nuts", "handful", 7)
     )
 
-    fun getFoodById(id: String): FoodItem? {
-        return foodList.find { it.id == id }
+    fun getFoodList(context: Context): List<FoodItem> {
+        val prefs = context.getSharedPreferences("gym_buddy_prefs", Context.MODE_PRIVATE)
+        val json = prefs.getString("food_list", null)
+        return if (json != null) {
+            try {
+                val type = object : TypeToken<List<FoodItem>>() {}.type
+                Gson().fromJson(json, type)
+            } catch (e: Exception) {
+                defaultFoodList
+            }
+        } else {
+            defaultFoodList
+        }
+    }
+
+    fun saveFoodList(context: Context, foodList: List<FoodItem>) {
+        val prefs = context.getSharedPreferences("gym_buddy_prefs", Context.MODE_PRIVATE)
+        val json = Gson().toJson(foodList)
+        prefs.edit().putString("food_list", json).apply()
+    }
+
+    fun getFoodById(context: Context, id: String): FoodItem? {
+        return getFoodList(context).find { it.id == id }
     }
 }
