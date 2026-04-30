@@ -324,6 +324,8 @@ class FoodAdapter(
 
     inner class FoodViewHolder(private val binding: ItemFoodBinding) : RecyclerView.ViewHolder(binding.root) {
 
+        private val lastTriggeredValues = mutableMapOf<String, Int>()
+
         fun bind(food: FoodItem) {
             binding.foodNameText.text = "${food.name} (${food.servingDescription})"
 
@@ -336,9 +338,26 @@ class FoodAdapter(
             binding.portionsSlider.max = food.maxPortions
             binding.portionsSlider.progress = portions
 
+            // Initialize last triggered value
+            lastTriggeredValues[food.id] = portions
+
             binding.portionsSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                     if (fromUser) {
+                        // Check if we've crossed to a new integer value for haptic feedback
+                        val lastTriggered = lastTriggeredValues[food.id] ?: 0
+                        if (progress != lastTriggered) {
+                            // Trigger haptic feedback for value change
+                            try {
+                                val vibrator = binding.root.context.getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator
+                                vibrator?.vibrate(30) // 30ms vibration for smoother feel
+                            } catch (e: Exception) {
+                                // Ignore if vibrator is not available or deprecated
+                            }
+                            // Update last triggered value
+                            lastTriggeredValues[food.id] = progress
+                        }
+
                         // Update current slider value
                         currentSliderValues[food.id] = progress
 
