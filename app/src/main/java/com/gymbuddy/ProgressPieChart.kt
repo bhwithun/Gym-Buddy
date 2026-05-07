@@ -1,11 +1,17 @@
 package com.gymbuddy
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import kotlin.math.cos
 import kotlin.math.min
@@ -18,6 +24,7 @@ class ProgressPieChart @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private var onClickListener: (() -> Unit)? = null
+    private var onCompletionAnimationFinished: (() -> Unit)? = null
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val checkPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -26,6 +33,7 @@ class ProgressPieChart @JvmOverloads constructor(
     private var isSegmented = false
     private var isHighlighted = false
     private var isOutlineEnabled = true
+    private var isAnimating = false
 
     init {
         paint.style = Paint.Style.STROKE
@@ -57,6 +65,76 @@ class ProgressPieChart @JvmOverloads constructor(
 
     fun setOnClickListener(listener: () -> Unit) {
         onClickListener = listener
+    }
+
+    fun setOnCompletionAnimationFinished(listener: () -> Unit) {
+        onCompletionAnimationFinished = listener
+    }
+
+    fun startCompletionAnimation(onAdjacentViews: (Float) -> Unit, onAnimationEnd: () -> Unit) {
+        if (isAnimating) {
+            return
+        }
+        isAnimating = true
+
+        // Scale up to 1.5x
+        val scaleUpX = ObjectAnimator.ofFloat(this, "scaleX", 1f, 1.5f)
+        val scaleUpY = ObjectAnimator.ofFloat(this, "scaleY", 1f, 1.5f)
+
+        val scaleUpSet = AnimatorSet()
+        scaleUpSet.playTogether(scaleUpX, scaleUpY)
+        scaleUpSet.duration = 300
+
+        // Push adjacent views
+        val pushAnimator = ValueAnimator.ofFloat(0f, 1f)
+        pushAnimator.duration = 300
+        pushAnimator.addUpdateListener { animator ->
+            val progress = animator.animatedValue as Float
+            val pushDistance = progress * (width * 0.25f) // Push by 25% of width
+            onAdjacentViews(pushDistance)
+        }
+
+        val swellSet = AnimatorSet()
+        swellSet.playTogether(scaleUpSet, pushAnimator)
+
+        // Burst: instantly change to completed state
+        swellSet.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                // Change to completed appearance
+                completed = total
+                invalidate()
+
+                // Scale back down
+                val scaleDownX = ObjectAnimator.ofFloat(this@ProgressPieChart, "scaleX", 1.5f, 1f)
+                val scaleDownY = ObjectAnimator.ofFloat(this@ProgressPieChart, "scaleY", 1.5f, 1f)
+
+                val scaleDownSet = AnimatorSet()
+                scaleDownSet.playTogether(scaleDownX, scaleDownY)
+                scaleDownSet.duration = 300
+
+                // Return adjacent views
+                val returnAnimator = ValueAnimator.ofFloat(1f, 0f)
+                returnAnimator.duration = 300
+                returnAnimator.addUpdateListener { animator ->
+                    val progress = animator.animatedValue as Float
+                    val pushDistance = progress * (width * 0.25f)
+                    onAdjacentViews(pushDistance)
+                }
+
+                val settleSet = AnimatorSet()
+                settleSet.playTogether(scaleDownSet, returnAnimator)
+                settleSet.addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        isAnimating = false
+                        onCompletionAnimationFinished?.invoke()
+                        onAnimationEnd()
+                    }
+                })
+                settleSet.start()
+            }
+        })
+
+        swellSet.start()
     }
 
     override fun onTouchEvent(event: android.view.MotionEvent): Boolean {

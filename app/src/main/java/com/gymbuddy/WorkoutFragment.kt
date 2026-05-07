@@ -1,6 +1,7 @@
 package com.gymbuddy
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -138,38 +139,61 @@ class WorkoutFragment : Fragment() {
                 val adapter = ExercisePagerAdapter(this@WorkoutFragment, exercises, { position ->
                     saveWorkoutLog()
                     updateBackgroundColor()
-                }, { updatedExercise ->
-                    // Update the exercise in the list
-                    val pos = exercises.indexOf(updatedExercise)
-                    if (pos != -1) {
-                        exercises[pos] = updatedExercise
-                        // Update the corresponding small pie chart
-                        smallPies[pos].setProgress(updatedExercise.completedSets, updatedExercise.sets)
-                    }
-                    updateBackgroundColor()
-                    // Save workout log immediately to persist rating changes
-                    saveWorkoutLog()
-                    // Also update the routine
-                    if (isAdded && context != null) {
-                        lifecycleScope.launch {
-                            val loadedDay = makeupDayOfWeek ?: Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-                            val routineDay = withContext(Dispatchers.IO) {
-                                AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(loadedDay)
-                            }
-                            if (routineDay != null) {
-                                val updatedExercises = routineDay.exercises.toMutableList()
-                                val routinePos = updatedExercises.indexOfFirst { it.title == updatedExercise.title }
-                                if (routinePos != -1) {
-                                    updatedExercises[routinePos] = updatedExercise.copy(completedSets = 0) // reset completedSets for routine template
-                                    val updatedRoutineDay = routineDay.copy(exercises = updatedExercises)
-                                    withContext(Dispatchers.IO) {
-                                        AppDatabase.getDatabase(requireContext()).routineDao().insertAll(updatedRoutineDay)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                })
+                 }, { updatedExercise, oldCompleted, newCompleted ->
+                     // Update the exercise in the list
+                     val pos = exercises.indexOf(updatedExercise)
+                     if (pos != -1) {
+                         val oldTotal = exercises[pos].sets
+                         val wasComplete = oldCompleted >= oldTotal
+                         exercises[pos] = updatedExercise
+                         val isNowComplete = newCompleted >= updatedExercise.sets
+
+                         if (isNowComplete && !wasComplete) {
+                             // Just completed - trigger animation
+                             smallPies[pos].startCompletionAnimation(
+                                 onAdjacentViews = { pushDistance ->
+                                     // Push adjacent circles
+                                     if (pos > 0) {
+                                         smallPies[pos - 1].translationX = -pushDistance
+                                     }
+                                     if (pos < smallPies.size - 1) {
+                                         smallPies[pos + 1].translationX = pushDistance
+                                     }
+                                 },
+                                 onAnimationEnd = {
+                                     // Animation finished, update progress normally
+                                     smallPies[pos].setProgress(updatedExercise.completedSets, updatedExercise.sets)
+                                 }
+                             )
+                         } else {
+                             // Normal update
+                             smallPies[pos].setProgress(updatedExercise.completedSets, updatedExercise.sets)
+                         }
+                     }
+                     updateBackgroundColor()
+                     // Save workout log immediately to persist rating changes
+                     saveWorkoutLog()
+                     // Also update the routine
+                     if (isAdded && context != null) {
+                         lifecycleScope.launch {
+                             val loadedDay = makeupDayOfWeek ?: Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+                             val routineDay = withContext(Dispatchers.IO) {
+                                 AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(loadedDay)
+                             }
+                             if (routineDay != null) {
+                                 val updatedExercises = routineDay.exercises.toMutableList()
+                                 val routinePos = updatedExercises.indexOfFirst { it.title == updatedExercise.title }
+                                 if (routinePos != -1) {
+                                     updatedExercises[routinePos] = updatedExercise.copy(completedSets = 0) // reset completedSets for routine template
+                                     val updatedRoutineDay = routineDay.copy(exercises = updatedExercises)
+                                     withContext(Dispatchers.IO) {
+                                         AppDatabase.getDatabase(requireContext()).routineDao().insertAll(updatedRoutineDay)
+                                     }
+                                 }
+                             }
+                         }
+                     }
+                 })
 
                 binding.viewPager.adapter = adapter
                 binding.viewPager.setPageTransformer(PageFlipPageTransformer())
@@ -254,7 +278,7 @@ class WorkoutFragment : Fragment() {
         fragment: Fragment,
         private val exercises: List<Exercise>,
         private val onSetCompleted: (Int) -> Unit,
-        private val onUpdate: (Exercise) -> Unit
+        private val onUpdate: (Exercise, Int, Int) -> Unit
     ) : FragmentStateAdapter(fragment) {
         override fun getItemCount(): Int = exercises.size
         override fun createFragment(position: Int): Fragment {
