@@ -34,6 +34,7 @@ class ProgressPieChart @JvmOverloads constructor(
     private var isHighlighted = false
     private var isOutlineEnabled = true
     private var isAnimating = false
+    private var isSwelled = false
 
     init {
         paint.style = Paint.Style.STROKE
@@ -42,7 +43,7 @@ class ProgressPieChart @JvmOverloads constructor(
 
         checkPaint.style = Paint.Style.STROKE
         checkPaint.strokeWidth = 6f
-        checkPaint.color = Color.WHITE
+        checkPaint.color = Color.parseColor("#2A2A2A") // dark gray
         checkPaint.strokeCap = Paint.Cap.ROUND
     }
 
@@ -77,9 +78,9 @@ class ProgressPieChart @JvmOverloads constructor(
         }
         isAnimating = true
 
-        // Scale up to 1.5x
-        val scaleUpX = ObjectAnimator.ofFloat(this, "scaleX", 1f, 1.5f)
-        val scaleUpY = ObjectAnimator.ofFloat(this, "scaleY", 1f, 1.5f)
+        // Scale up to 2x
+        val scaleUpX = ObjectAnimator.ofFloat(this, "scaleX", 1f, 2f)
+        val scaleUpY = ObjectAnimator.ofFloat(this, "scaleY", 1f, 2f)
 
         val scaleUpSet = AnimatorSet()
         scaleUpSet.playTogether(scaleUpX, scaleUpY)
@@ -105,16 +106,16 @@ class ProgressPieChart @JvmOverloads constructor(
                 invalidate()
 
                 // Scale back down
-                val scaleDownX = ObjectAnimator.ofFloat(this@ProgressPieChart, "scaleX", 1.5f, 1f)
-                val scaleDownY = ObjectAnimator.ofFloat(this@ProgressPieChart, "scaleY", 1.5f, 1f)
+                val scaleDownX = ObjectAnimator.ofFloat(this@ProgressPieChart, "scaleX", 2f, 1f)
+                val scaleDownY = ObjectAnimator.ofFloat(this@ProgressPieChart, "scaleY", 2f, 1f)
 
                 val scaleDownSet = AnimatorSet()
                 scaleDownSet.playTogether(scaleDownX, scaleDownY)
-                scaleDownSet.duration = 300
+                scaleDownSet.duration = 200
 
                 // Return adjacent views
                 val returnAnimator = ValueAnimator.ofFloat(1f, 0f)
-                returnAnimator.duration = 300
+                returnAnimator.duration = 200
                 returnAnimator.addUpdateListener { animator ->
                     val progress = animator.animatedValue as Float
                     val pushDistance = progress * (width * 0.25f)
@@ -135,6 +136,54 @@ class ProgressPieChart @JvmOverloads constructor(
         })
 
         swellSet.start()
+    }
+
+    fun startSwellAnimation(onAnimationEnd: () -> Unit = {}) {
+        if (isSwelled || isAnimating) {
+            return
+        }
+        isAnimating = true
+
+        // Scale up to 1.1x (10% swell)
+        val scaleUpX = ObjectAnimator.ofFloat(this, "scaleX", scaleX, 1.2f)
+        val scaleUpY = ObjectAnimator.ofFloat(this, "scaleY", scaleY, 1.2f)
+
+        val scaleUpSet = AnimatorSet()
+        scaleUpSet.playTogether(scaleUpX, scaleUpY)
+        scaleUpSet.duration = 150
+        scaleUpSet.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                isAnimating = false
+                isSwelled = true
+                onAnimationEnd()
+            }
+        })
+
+        scaleUpSet.start()
+    }
+
+    fun startRestoreAnimation(onAnimationEnd: () -> Unit = {}) {
+        if (!isSwelled || isAnimating) {
+            return
+        }
+        isAnimating = true
+
+        // Scale back down to 1x
+        val scaleDownX = ObjectAnimator.ofFloat(this, "scaleX", 1.1f, 1f)
+        val scaleDownY = ObjectAnimator.ofFloat(this, "scaleY", 1.1f, 1f)
+
+        val scaleDownSet = AnimatorSet()
+        scaleDownSet.playTogether(scaleDownX, scaleDownY)
+        scaleDownSet.duration = 300
+        scaleDownSet.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                isAnimating = false
+                isSwelled = false
+                onAnimationEnd()
+            }
+        })
+
+        scaleDownSet.start()
     }
 
     override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
@@ -171,7 +220,8 @@ class ProgressPieChart @JvmOverloads constructor(
 
             // Draw checkmark
             val checkPath = Path()
-            val checkSize = radius * 0.4f
+            val checkSize = radius * 0.6f
+            checkPaint.strokeWidth = radius * .06f
             checkPath.moveTo(centerX - checkSize * 0.3f, centerY)
             checkPath.lineTo(centerX - checkSize * 0.1f, centerY + checkSize * 0.2f)
             checkPath.lineTo(centerX + checkSize * 0.3f, centerY - checkSize * 0.2f)

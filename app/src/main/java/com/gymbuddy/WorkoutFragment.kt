@@ -34,6 +34,7 @@ class WorkoutFragment : Fragment() {
     private val gson = Gson()
     private var makeupDayOfWeek: Int? = null
     private var isMakeup = false
+    private var currentSwelledPosition = -1
 
     companion object {
         private const val ARG_MAKEUP_DAY = "makeup_day"
@@ -148,27 +149,8 @@ class WorkoutFragment : Fragment() {
                          exercises[pos] = updatedExercise
                          val isNowComplete = newCompleted >= updatedExercise.sets
 
-                         if (isNowComplete && !wasComplete) {
-                             // Just completed - trigger animation
-                             smallPies[pos].startCompletionAnimation(
-                                 onAdjacentViews = { pushDistance ->
-                                     // Push adjacent circles
-                                     if (pos > 0) {
-                                         smallPies[pos - 1].translationX = -pushDistance
-                                     }
-                                     if (pos < smallPies.size - 1) {
-                                         smallPies[pos + 1].translationX = pushDistance
-                                     }
-                                 },
-                                 onAnimationEnd = {
-                                     // Animation finished, update progress normally
-                                     smallPies[pos].setProgress(updatedExercise.completedSets, updatedExercise.sets)
-                                 }
-                             )
-                         } else {
-                             // Normal update
-                             smallPies[pos].setProgress(updatedExercise.completedSets, updatedExercise.sets)
-                         }
+                          // Normal update
+                          smallPies[pos].setProgress(updatedExercise.completedSets, updatedExercise.sets)
                      }
                      updateBackgroundColor()
                      // Save workout log immediately to persist rating changes
@@ -297,6 +279,18 @@ class WorkoutFragment : Fragment() {
     }
 
     private fun updateCircleHighlights(currentPosition: Int) {
+        // Restore previously swelled pie if different from current
+        if (currentSwelledPosition != -1 && currentSwelledPosition != currentPosition) {
+            smallPies[currentSwelledPosition].startRestoreAnimation()
+        }
+
+        // Swell the current pie if not already swelled
+        if (currentPosition != currentSwelledPosition) {
+            smallPies[currentPosition].startSwellAnimation()
+            currentSwelledPosition = currentPosition
+        }
+
+        // Update highlighting
         for (i in smallPies.indices) {
             smallPies[i].setHighlighted(i == currentPosition)
         }
