@@ -1,0 +1,18 @@
+{
+  "name": "gymm-buddy-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-06",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "head_sampling_rate": 1
+    }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "WORKOUTS",
+      "id": "a5711033674b43bcacaa94a3d08a9544"
+    }
+  ]
+}

@@ -1,68 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".AboutFragment"
-    android:padding="16dp">
+    android:fillViewport="true"
+    tools:context=".AboutFragment">
 
-    <ImageView
-        android:id="@+id/logoImage"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:src="@drawable/plate"
-        android:contentDescription="Gym Buddy Logo"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="32dp" />
-
-    <TextView
-        android:id="@+id/appNameText"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/app_name"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/logoImage"
-        android:layout_marginTop="24dp" />
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <TextView
-        android:id="@+id/versionText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="18sp"
-        android:textColor="#888888"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/appNameText"
-        android:layout_marginTop="16dp"
-        tools:text="Version 1.0" />
+        <ImageView
+            android:id="@+id/logoImage"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_marginTop="32dp"
+            android:contentDescription="Gym Buddy Logo"
+            android:src="@drawable/plate" />
 
-    <TextView
-        android:id="@+id/creditsText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Made on Earth by Brian"
-        android:textSize="18sp"
-        android:textColor="#888888"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/versionText"
-        android:layout_marginTop="16dp" />
+        <TextView
+            android:id="@+id/appNameText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/app_name"
+            android:textSize="32sp"
+            android:textStyle="bold" />
 
-    <ImageView
-        android:id="@+id/qrCodeImage"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
-        android:src="@drawable/qr_code"
-        android:contentDescription="QR Code for APK Download"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/creditsText"
-        android:layout_marginTop="32dp" />
+        <TextView
+            android:id="@+id/versionText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textColor="#888888"
+            android:textSize="18sp"
+            tools:text="Version 1.0" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/creditsText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Made on Earth by Brian"
+            android:textColor="#888888"
+            android:textSize="18sp" />
+
+        <ImageView
+            android:id="@+id/qrCodeImage"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_marginTop="32dp"
+            android:contentDescription="QR Code for APK Download"
+            android:src="@drawable/qr_code" />
+
+        <TextView
+            android:id="@+id/workerHelpLink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:padding="8dp"
+            android:text="@string/worker_help_link"
+            android:textColor="@color/weight_color"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/workerUrlInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:hint="@string/worker_url_hint"
+            android:inputType="textUri"
+            android:textColor="@color/onSurface"
+            android:textColorHint="#888888"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/workerTokenInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="@string/worker_token_hint"
+            android:inputType="textPassword"
+            android:textColor="@color/onSurface"
+            android:textColorHint="#888888"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/workerSaveButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="24dp"
+            android:backgroundTint="@color/primary"
+            android:text="@string/worker_save"
+            android:textAllCaps="false"
+            android:textColor="@color/onPrimary" />
+    </LinearLayout>
+</ScrollView>

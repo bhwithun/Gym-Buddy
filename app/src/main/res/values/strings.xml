@@ -20,4 +20,15 @@
     <string name="summary_range">%1$s  →  %2$s</string>
     <string name="summary_stats">%1$d exercises  ·  %2$d sets</string>
     <string name="summary_done">Done</string>
+    <string name="summary_push">Push gym time</string>
+    <string name="summary_pushing">Pushing…</string>
+    <string name="summary_pushed">Pushed</string>
+    <string name="summary_push_failed">Could not push gym time</string>
+    <string name="worker_url_hint">Worker URL (optional)</string>
+    <string name="worker_token_hint">Worker token (optional)</string>
+    <string name="worker_save">Save worker</string>
+    <string name="worker_saved">Worker saved</string>
+    <string name="worker_cleared">Worker cleared</string>
+    <string name="worker_help_link">How to set up a worker</string>
+    <string name="worker_help_url">https://github.com/bhwithun/Gym-Buddy/blob/main/gymm-buddy-worker/README.md</string>
 </resources>

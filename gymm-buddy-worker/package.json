@@ -1,0 +1,12 @@
+{
+  "name": "gymm-buddy-worker",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types"
+  },
+  "devDependencies": {
+    "wrangler": "^4.34.0"
+  }
+}

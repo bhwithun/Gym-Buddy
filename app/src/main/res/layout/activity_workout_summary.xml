@@ -61,10 +61,25 @@
         tools:text="6 exercises  ·  18 sets" />
 
     <Button
-        android:id="@+id/doneButton"
+        android:id="@+id/pushButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="36dp"
+        android:backgroundTint="#1E88E5"
+        android:padding="14dp"
+        android:text="@string/summary_push"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <Button
+        android:id="@+id/doneButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
         android:backgroundTint="#00AA44"
         android:padding="14dp"
         android:text="@string/summary_done"

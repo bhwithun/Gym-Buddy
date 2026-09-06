@@ -1,16 +1,20 @@
 package com.gymbuddy
 
 import android.os.Bundle
+import android.view.View
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.gymbuddy.databinding.ActivityWorkoutSummaryBinding
+import kotlin.concurrent.thread
 
 class WorkoutSummaryActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityWorkoutSummaryBinding
     private var showingWords = false
     private var durationMs = 0L
+    private var summaryData: WorkoutClock.Summary? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +48,7 @@ class WorkoutSummaryActivity : AppCompatActivity() {
             return
         }
 
+        summaryData = summary
         durationMs = summary.durationMs
         binding.timeRange.text = getString(
             R.string.summary_range,
@@ -61,6 +66,12 @@ class WorkoutSummaryActivity : AppCompatActivity() {
             showingWords = !showingWords
             renderDuration()
         }
+        if (WorkerRemote.isConfigured(this)) {
+            binding.pushButton.visibility = View.VISIBLE
+            binding.pushButton.setOnClickListener { pushToWorker() }
+        } else {
+            binding.pushButton.visibility = View.GONE
+        }
         binding.doneButton.setOnClickListener { close() }
     }
 
@@ -75,6 +86,25 @@ class WorkoutSummaryActivity : AppCompatActivity() {
             binding.durationValue.typeface = ResourcesCompat.getFont(this, R.font.seven_segment)
             binding.durationValue.text = WorkoutClock.formatDuration(durationMs)
             binding.durationHint.text = getString(R.string.summary_tap_time)
+        }
+    }
+
+    private fun pushToWorker() {
+        val summary = summaryData ?: return
+        binding.pushButton.isEnabled = false
+        binding.pushButton.setText(R.string.summary_pushing)
+        thread {
+            val result = WorkoutPushClient.push(this, summary)
+            runOnUiThread {
+                if (isFinishing) return@runOnUiThread
+                if (result.isSuccess) {
+                    binding.pushButton.setText(R.string.summary_pushed)
+                } else {
+                    binding.pushButton.isEnabled = true
+                    binding.pushButton.setText(R.string.summary_push)
+                    Toast.makeText(this, R.string.summary_push_failed, Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

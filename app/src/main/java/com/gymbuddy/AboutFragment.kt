@@ -1,8 +1,10 @@
 package com.gymbuddy
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
@@ -40,6 +42,24 @@ class AboutFragment : Fragment() {
                 toggleEasterEgg()
                 logoTapCount = 0
             }
+        }
+
+        binding.workerHelpLink.setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.worker_help_url))))
+        }
+        binding.workerUrlInput.setText(WorkerRemote.getUrl(requireContext()) ?: "")
+        binding.workerTokenInput.setText(WorkerRemote.getToken(requireContext()) ?: "")
+        binding.workerSaveButton.setOnClickListener {
+            val url = binding.workerUrlInput.text.toString()
+            val token = binding.workerTokenInput.text.toString()
+            WorkerRemote.save(requireContext(), url, token)
+            binding.workerUrlInput.setText(WorkerRemote.getUrl(requireContext()) ?: "")
+            val message = if (WorkerRemote.isConfigured(requireContext())) {
+                R.string.worker_saved
+            } else {
+                R.string.worker_cleared
+            }
+            android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
