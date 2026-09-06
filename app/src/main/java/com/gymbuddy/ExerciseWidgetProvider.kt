@@ -209,6 +209,12 @@ class ExerciseWidgetProvider : AppWidgetProvider() {
 
             WorkoutSync.notifyWorkoutChanged()
             bindAll(context)
+            val clockEvent = when {
+                updated.completedSets > current.completedSets -> WorkoutClock.Event.SET_COMPLETE
+                updated.completedSets < current.completedSets -> WorkoutClock.Event.SET_UNDONE
+                else -> WorkoutClock.Event.LOAD
+            }
+            WorkoutClock.presentIfNeeded(context, exercises, clockEvent)
 
             if (updated.isTimerActive && updated.timerEndTime > System.currentTimeMillis()) {
                 scheduleTimerEndAlarm(context, updated.timerEndTime)

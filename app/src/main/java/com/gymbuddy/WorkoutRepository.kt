@@ -104,6 +104,7 @@ object WorkoutRepository {
         }
 
         if (alreadyOnThisDay) return
+        WorkoutClock.reset(context)
 
         val routine = AppDatabase.getDatabase(context).routineDao().getByDayOfWeekSync(dayOfWeek) ?: return
         if (routine.isRest) return

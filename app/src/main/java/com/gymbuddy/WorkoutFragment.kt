@@ -164,7 +164,6 @@ class WorkoutFragment : Fragment() {
 
                 val adapter = ExercisePagerAdapter(this@WorkoutFragment, exercises, { position ->
                     saveWorkoutLog()
-                    updateBackgroundColor()
                     ExerciseWidgetProvider.refreshAll(requireContext())
                  }, { position, updatedExercise, oldCompleted, newCompleted ->
                      // Update by index so renames (and any field edits) always stick
@@ -174,13 +173,20 @@ class WorkoutFragment : Fragment() {
                              smallPies[position].setProgress(updatedExercise.completedSets, updatedExercise.sets)
                          }
                      }
-                     updateBackgroundColor()
                      // Persist to today's workout log
                      saveWorkoutLog()
                      // Also update the routine template for this day (including makeup target day)
                      persistExerciseToRoutine(position, updatedExercise)
                      if (oldCompleted != newCompleted || !updatedExercise.isTimerActive) {
                          ExerciseWidgetProvider.refreshAll(requireContext())
+                     }
+                     if (oldCompleted != newCompleted) {
+                         val event = if (newCompleted > oldCompleted) {
+                             WorkoutClock.Event.SET_COMPLETE
+                         } else {
+                             WorkoutClock.Event.SET_UNDONE
+                         }
+                         WorkoutClock.presentIfNeeded(requireActivity(), exercises, event)
                      }
                  })
 
@@ -240,8 +246,7 @@ class WorkoutFragment : Fragment() {
                     binding.viewPager.setCurrentItem(targetPage, false)
                 }
 
-                // Check if all exercises are complete and update background
-                updateBackgroundColor()
+                WorkoutClock.presentIfNeeded(requireActivity(), exercises, WorkoutClock.Event.LOAD)
             } else {
                 Toast.makeText(requireContext(), "No routine for today", Toast.LENGTH_SHORT).show()
                 binding.viewPager.adapter = null
@@ -311,13 +316,6 @@ class WorkoutFragment : Fragment() {
             fragment.setOnUpdateListener(onUpdate)
             return fragment
         }
-    }
-
-    private fun updateBackgroundColor() {
-        if (_binding == null) return
-        val allComplete = exercises.all { it.completedSets >= it.sets }
-        val backgroundColor = if (allComplete) android.graphics.Color.parseColor("#FF006400") else android.graphics.Color.parseColor("#FF121212") // dark green or default
-        binding.root.setBackgroundColor(backgroundColor)
     }
 
     private fun updateCircleHighlights(currentPosition: Int) {

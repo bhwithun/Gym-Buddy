@@ -14,4 +14,10 @@
     <string name="widget_next">Next exercise</string>
     <string name="widget_pie_description">Completed %1$d of %2$d sets</string>
     <string name="widget_no_tip">No tip</string>
+    <string name="summary_title">Gym time</string>
+    <string name="summary_tap_time">tap for details</string>
+    <string name="summary_tap_time_digital">tap for clock</string>
+    <string name="summary_range">%1$s  →  %2$s</string>
+    <string name="summary_stats">%1$d exercises  ·  %2$d sets</string>
+    <string name="summary_done">Done</string>
 </resources>
