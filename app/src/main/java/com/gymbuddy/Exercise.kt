@@ -12,5 +12,8 @@ data class Exercise(
     var isTimerActive: Boolean = false,
     var remainingSeconds: Int = 0,
     var timerEndTime: Long = 0,
-    var rating: String = "good" // "easy", "good", "hard"
-) : Serializable
+    var rating: String = "good", // "easy", "good", "hard"
+    var timerDurationSeconds: Int = 0
+) : Serializable {
+    fun cooldownSeconds(): Int = ExerciseTimers.cooldownSeconds(rating)
+}

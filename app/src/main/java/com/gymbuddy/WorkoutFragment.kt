@@ -35,6 +35,16 @@ class WorkoutFragment : Fragment() {
     private var makeupDayOfWeek: Int? = null
     private var isMakeup = false
     private var currentSwelledPosition = -1
+    private var loadToken = 0
+    private val reloadFromWidget = Runnable {
+        if (isAdded && _binding != null && !isMakeup) {
+            loadWorkout(preservePage = true)
+        }
+    }
+    private val onExternalWorkoutChange: () -> Unit = {
+        view?.removeCallbacks(reloadFromWidget)
+        view?.postDelayed(reloadFromWidget, 250)
+    }
 
     companion object {
         private const val ARG_MAKEUP_DAY = "makeup_day"
@@ -94,12 +104,27 @@ class WorkoutFragment : Fragment() {
         loadWorkout()
     }
 
-    private fun loadWorkout() {
+    override fun onStart() {
+        super.onStart()
+        WorkoutSync.addListener(onExternalWorkoutChange)
+    }
+
+    override fun onStop() {
+        view?.removeCallbacks(reloadFromWidget)
+        WorkoutSync.removeListener(onExternalWorkoutChange)
+        super.onStop()
+    }
+
+    private fun loadWorkout(preservePage: Boolean = false) {
+        val pageToRestore = if (preservePage && _binding != null) binding.viewPager.currentItem else -1
+        val token = ++loadToken
         lifecycleScope.launch {
+            if (token != loadToken) return@launch
             val loadedDay = makeupDayOfWeek ?: Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
             val day = withContext(Dispatchers.IO) {
                 AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(loadedDay)
             }
+            if (token != loadToken || _binding == null) return@launch
             if (day?.isRest == true) {
                 Toast.makeText(requireContext(), "Rest Day!", Toast.LENGTH_SHORT).show()
                 binding.viewPager.adapter = null
@@ -137,44 +162,24 @@ class WorkoutFragment : Fragment() {
                     }
                 }
 
+                if (token != loadToken || _binding == null) return@launch
+
                 val adapter = ExercisePagerAdapter(this@WorkoutFragment, exercises, { position ->
                     saveWorkoutLog()
                     updateBackgroundColor()
-                 }, { updatedExercise, oldCompleted, newCompleted ->
-                     // Update the exercise in the list
-                     val pos = exercises.indexOf(updatedExercise)
-                     if (pos != -1) {
-                         val oldTotal = exercises[pos].sets
-                         val wasComplete = oldCompleted >= oldTotal
-                         exercises[pos] = updatedExercise
-                         val isNowComplete = newCompleted >= updatedExercise.sets
-
-                          // Normal update
-                          smallPies[pos].setProgress(updatedExercise.completedSets, updatedExercise.sets)
-                     }
-                     updateBackgroundColor()
-                     // Save workout log immediately to persist rating changes
-                     saveWorkoutLog()
-                     // Also update the routine
-                     if (isAdded && context != null) {
-                         lifecycleScope.launch {
-                             val loadedDay = makeupDayOfWeek ?: Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-                             val routineDay = withContext(Dispatchers.IO) {
-                                 AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(loadedDay)
-                             }
-                             if (routineDay != null) {
-                                 val updatedExercises = routineDay.exercises.toMutableList()
-                                 val routinePos = updatedExercises.indexOfFirst { it.title == updatedExercise.title }
-                                 if (routinePos != -1) {
-                                     updatedExercises[routinePos] = updatedExercise.copy(completedSets = 0) // reset completedSets for routine template
-                                     val updatedRoutineDay = routineDay.copy(exercises = updatedExercises)
-                                     withContext(Dispatchers.IO) {
-                                         AppDatabase.getDatabase(requireContext()).routineDao().insertAll(updatedRoutineDay)
-                                     }
-                                 }
-                             }
+                 }, { position, updatedExercise, _, _ ->
+                     // Update by index so renames (and any field edits) always stick
+                     if (position in exercises.indices) {
+                         exercises[position] = updatedExercise
+                         if (position in smallPies.indices) {
+                             smallPies[position].setProgress(updatedExercise.completedSets, updatedExercise.sets)
                          }
                      }
+                     updateBackgroundColor()
+                     // Persist to today's workout log
+                     saveWorkoutLog()
+                     // Also update the routine template for this day (including makeup target day)
+                     persistExerciseToRoutine(position, updatedExercise)
                  })
 
                 binding.viewPager.adapter = adapter
@@ -222,10 +227,14 @@ class WorkoutFragment : Fragment() {
                     }
                 }
 
-                // Auto-advance to first incomplete exercise
                 val firstIncompleteIndex = exercises.indexOfFirst { it.completedSets < it.sets }
-                if (firstIncompleteIndex != -1) {
-                    binding.viewPager.setCurrentItem(firstIncompleteIndex, false)
+                val targetPage = when {
+                    pageToRestore in exercises.indices -> pageToRestore
+                    firstIncompleteIndex != -1 -> firstIncompleteIndex
+                    else -> 0
+                }
+                if (exercises.isNotEmpty()) {
+                    binding.viewPager.setCurrentItem(targetPage, false)
                 }
 
                 // Check if all exercises are complete and update background
@@ -252,6 +261,37 @@ class WorkoutFragment : Fragment() {
                 val loggedJson = gson.toJson(exercises)
                 val log = WorkoutLogEntity(dateStr, plannedJson, loggedJson)
                 AppDatabase.getDatabase(context).workoutLogDao().insert(log)
+                ExerciseWidgetProvider.refreshCollection(context)
+            }
+        }
+    }
+
+    /**
+     * Writes exercise edits (title, weight, reps, sets, notes, rating, etc.) back to the
+     * routine day being performed — today's day, or the makeup day when applicable.
+     * Matches by list index so title renames still update the correct exercise.
+     */
+    private fun persistExerciseToRoutine(position: Int, updatedExercise: Exercise) {
+        if (!isAdded || context == null) return
+        lifecycleScope.launch {
+            val targetDayOfWeek = makeupDayOfWeek ?: Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+            val routineDay = withContext(Dispatchers.IO) {
+                AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(targetDayOfWeek)
+            } ?: return@launch
+
+            val updatedExercises = routineDay.exercises.toMutableList()
+            if (position !in updatedExercises.indices) return@launch
+
+            // Keep session progress out of the reusable routine template
+            updatedExercises[position] = updatedExercise.copy(
+                completedSets = 0,
+                isTimerActive = false,
+                remainingSeconds = 0,
+                timerEndTime = 0
+            )
+            val updatedRoutineDay = routineDay.copy(exercises = updatedExercises)
+            withContext(Dispatchers.IO) {
+                AppDatabase.getDatabase(requireContext()).routineDao().insertAll(updatedRoutineDay)
             }
         }
     }
@@ -260,7 +300,7 @@ class WorkoutFragment : Fragment() {
         fragment: Fragment,
         private val exercises: List<Exercise>,
         private val onSetCompleted: (Int) -> Unit,
-        private val onUpdate: (Exercise, Int, Int) -> Unit
+        private val onUpdate: (Int, Exercise, Int, Int) -> Unit
     ) : FragmentStateAdapter(fragment) {
         override fun getItemCount(): Int = exercises.size
         override fun createFragment(position: Int): Fragment {

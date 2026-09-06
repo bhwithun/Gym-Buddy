@@ -9,13 +9,8 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
-import kotlin.math.cos
-import kotlin.math.min
-import kotlin.math.sin
 
 class ProgressPieChart @JvmOverloads constructor(
     context: Context,
@@ -195,73 +190,15 @@ class ProgressPieChart @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
-        val centerX = width / 2f
-        val centerY = height / 2f
-        val radius = min(centerX, centerY) - paint.strokeWidth / 2
-
-        // Draw background circle
-        paint.color = Color.parseColor("#2A2A2A") // dark gray
-        paint.style = Paint.Style.FILL
-        canvas.drawCircle(centerX, centerY, radius, paint)
-
-        // Draw outline if enabled
-        if (isOutlineEnabled) {
-            paint.color = Color.parseColor("#BDBDBD") // lighter gray
-            paint.style = Paint.Style.STROKE
-            canvas.drawCircle(centerX, centerY, radius, paint)
-        }
-
-        if (completed >= total) {
-            // Draw solid pale green
-            paint.color = Color.parseColor("#80FF80") // pale green
-            paint.style = Paint.Style.FILL
-            canvas.drawCircle(centerX, centerY, radius - paint.strokeWidth, paint)
-
-            // Draw checkmark
-            val checkPath = Path()
-            val checkSize = radius * 0.6f
-            checkPaint.strokeWidth = radius * .06f
-            checkPath.moveTo(centerX - checkSize * 0.3f, centerY)
-            checkPath.lineTo(centerX - checkSize * 0.1f, centerY + checkSize * 0.2f)
-            checkPath.lineTo(centerX + checkSize * 0.3f, centerY - checkSize * 0.2f)
-            canvas.drawPath(checkPath, checkPaint)
-        } else if (isSegmented) {
-            // Draw segmented pie
-            paint.style = Paint.Style.FILL
-            val anglePerSegment = 360f / total
-            for (i in 0 until total) {
-                val startAngle = -90f + i * anglePerSegment
-                paint.color = if (i < completed) Color.parseColor("#00FF00") else Color.parseColor("#424242") // dark gray
-                canvas.drawArc(
-                    centerX - radius + paint.strokeWidth,
-                    centerY - radius + paint.strokeWidth,
-                    centerX + radius - paint.strokeWidth,
-                    centerY + radius - paint.strokeWidth,
-                    startAngle,
-                    anglePerSegment,
-                    true,
-                    paint
-                )
-            }
-        } else {
-            // Draw progress arc
-            val progress = completed.toFloat() / total
-            if (progress > 0f) {
-                paint.color = Color.parseColor("#80FF80") // pale green
-                paint.style = Paint.Style.FILL
-                val sweepAngle = progress * 360f
-                canvas.drawArc(
-                    centerX - radius + paint.strokeWidth,
-                    centerY - radius + paint.strokeWidth,
-                    centerX + radius - paint.strokeWidth,
-                    centerY + radius - paint.strokeWidth,
-                    -90f,
-                    sweepAngle,
-                    true,
-                    paint
-                )
-            }
-        }
+        ProgressPieRenderer.drawPie(
+            canvas = canvas,
+            width = width.toFloat(),
+            height = height.toFloat(),
+            completedSets = completed,
+            totalSets = total,
+            segmented = isSegmented,
+            outlineEnabled = isOutlineEnabled,
+            outlineStroke = paint.strokeWidth
+        )
     }
 }

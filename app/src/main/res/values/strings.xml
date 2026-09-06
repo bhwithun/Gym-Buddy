@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Gym Buddy</string>
+    <string name="widget_name">Exercise</string>
+    <string name="widget_description">Swipe between today\'s exercises, tap the pie to log a set, and watch rest time decay around the ring.</string>
+    <string name="widget_empty_rest">Rest day</string>
+    <string name="widget_empty_none">No workout today</string>
+    <string name="widget_pie_content_description">Exercise progress pie</string>
+    <string name="widget_pie_description">Completed %1$d of %2$d sets</string>
 </resources>

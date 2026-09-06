@@ -28,7 +28,8 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
     private lateinit var exercise: Exercise
     private var position: Int = 0
     private lateinit var onSetCompleted: (Int) -> Unit
-    private lateinit var onUpdate: (Exercise, Int, Int) -> Unit // exercise, oldCompleted, newCompleted
+    /** position, exercise, oldCompletedSets, newCompletedSets */
+    private lateinit var onUpdate: (Int, Exercise, Int, Int) -> Unit
 
     private val handler = Handler(Looper.getMainLooper())
     private var timerRunnable: Runnable? = null
@@ -53,7 +54,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         onSetCompleted = listener
     }
 
-    fun setOnUpdateListener(listener: (Exercise, Int, Int) -> Unit) {
+    fun setOnUpdateListener(listener: (Int, Exercise, Int, Int) -> Unit) {
         onUpdate = listener
     }
 
@@ -88,7 +89,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
                 exercise.title = updatedExercise.title
                 exercise.notes = updatedExercise.notes
                 updateUI()
-                onUpdate(exercise, oldCompleted, exercise.completedSets)
+                onUpdate(position, exercise, oldCompleted, exercise.completedSets)
             }
             dialog.show(parentFragmentManager, "exercise_editor")
         }
@@ -135,21 +136,21 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
             exercise.rating = "easy"
             updateStarUI()
             showRatingBubble("easy")
-            onUpdate(exercise, exercise.completedSets, exercise.completedSets)
+            onUpdate(position, exercise, exercise.completedSets, exercise.completedSets)
         }
 
         binding.starGood.setOnClickListener {
             exercise.rating = "good"
             updateStarUI()
             showRatingBubble("good")
-            onUpdate(exercise, exercise.completedSets, exercise.completedSets)
+            onUpdate(position, exercise, exercise.completedSets, exercise.completedSets)
         }
 
         binding.starHard.setOnClickListener {
             exercise.rating = "hard"
             updateStarUI()
             showRatingBubble("hard")
-            onUpdate(exercise, exercise.completedSets, exercise.completedSets)
+            onUpdate(position, exercise, exercise.completedSets, exercise.completedSets)
         }
 
 
@@ -160,7 +161,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
                 val oldCompleted = exercise.completedSets
                 exercise.completedSets = 0
                 updateUI()
-                onUpdate(exercise, oldCompleted, exercise.completedSets)
+                onUpdate(position, exercise, oldCompleted, exercise.completedSets)
                 stopTimer()
             } else {
                 // Complete set logic
@@ -176,7 +177,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
                     val oldCompleted = exercise.completedSets
                     exercise.completedSets++
                     updateUI()
-                    onUpdate(exercise, oldCompleted, exercise.completedSets)
+                    onUpdate(position, exercise, oldCompleted, exercise.completedSets)
                     onSetCompleted(position)
                     showSetCompletedBubble()
 
@@ -184,14 +185,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
                     if (exercise.completedSets >= exercise.sets) {
                         stopTimer()  // Stop any running timer when final set is completed
                     } else {
-                        // Calculate cooldown duration based on difficulty rating
-                        val cooldownSeconds = when (exercise.rating) {
-                            "easy" -> 19  // 20-second total countdown
-                            "good" -> 39  // 40-second total countdown
-                            "hard" -> 59  // 60-second total countdown
-                            else -> 59   // Default to hard
-                        }
-                        startTimer(cooldownSeconds)  // Start timer for next set
+                        startTimer(exercise.cooldownSeconds())
                     }
                 }
             }
@@ -205,12 +199,15 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
     }
 
     private fun startTimer(initialSeconds: Int = 59) {
-        stopTimer() // Stop any existing timer
+        cancelTimerCallbacks()
         exercise.isTimerActive = true
+        exercise.timerDurationSeconds = initialSeconds
+        exercise.remainingSeconds = initialSeconds
         exercise.timerEndTime = System.currentTimeMillis() + initialSeconds * 1000L
         isTimerRunning = true
         updateUI()
-        onUpdate(exercise, exercise.completedSets, exercise.completedSets)
+        onUpdate(position, exercise, exercise.completedSets, exercise.completedSets)
+        ExerciseWidgetTicker.start(requireContext())
 
         timerRunnable = Runnable {
             try {
@@ -218,7 +215,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
                 exercise.remainingSeconds = maxOf(0, ((exercise.timerEndTime - currentTime) / 1000).toInt())
                 if (exercise.remainingSeconds > 0) {
                     if (_binding != null) updateUI()
-                    onUpdate(exercise, exercise.completedSets, exercise.completedSets)
+                    onUpdate(position, exercise, exercise.completedSets, exercise.completedSets)
                     handler.postDelayed(timerRunnable!!, 1000)
                 } else {
                     if (isAdded) { // Check if fragment is still attached
@@ -246,7 +243,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
                     exercise.remainingSeconds = maxOf(0, ((exercise.timerEndTime - currentTime) / 1000).toInt())
                     if (exercise.remainingSeconds > 0) {
                         if (_binding != null) updateUI()
-                        onUpdate(exercise, exercise.completedSets, exercise.completedSets)
+                        onUpdate(position, exercise, exercise.completedSets, exercise.completedSets)
                         handler.postDelayed(timerRunnable!!, 1000)
                     } else {
                         if (isAdded) { // Check if fragment is still attached
@@ -279,7 +276,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
                     exercise.remainingSeconds = 0
                     isTimerRunning = false
                     if (_binding != null) updateUI()
-                    onUpdate(exercise, exercise.completedSets, exercise.completedSets)
+                    onUpdate(position, exercise, exercise.completedSets, exercise.completedSets)
                 }
             } catch (e: Exception) {
                 // Flashing failed, stop it
@@ -289,14 +286,22 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
         handler.post(flashRunnable!!)
     }
 
-    private fun stopTimer() {
+    private fun cancelTimerCallbacks() {
         timerRunnable?.let { handler.removeCallbacks(it) }
         flashRunnable?.let { handler.removeCallbacks(it) }
         timerRunnable = null
         flashRunnable = null
+    }
+
+    private fun stopTimer() {
+        cancelTimerCallbacks()
         isTimerRunning = false
+        exercise.isTimerActive = false
+        exercise.remainingSeconds = 0
+        exercise.timerEndTime = 0
+        exercise.timerDurationSeconds = 0
         updateUI()
-        onUpdate(exercise, exercise.completedSets, exercise.completedSets)
+        onUpdate(position, exercise, exercise.completedSets, exercise.completedSets)
     }
 
     private fun showFullScreenNotes() {
@@ -518,13 +523,13 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
     override fun onWeightUpdated(newWeight: Int) {
         exercise.weight = newWeight
         updateUI()
-        onUpdate(exercise, exercise.completedSets, exercise.completedSets)
+        onUpdate(position, exercise, exercise.completedSets, exercise.completedSets)
     }
 
     override fun onRepsUpdated(newReps: Int) {
         exercise.reps = newReps
         updateUI()
-        onUpdate(exercise, exercise.completedSets, exercise.completedSets)
+        onUpdate(position, exercise, exercise.completedSets, exercise.completedSets)
     }
 
     override fun onSetsUpdated(newSets: Int) {
@@ -533,7 +538,7 @@ class ExerciseWorkoutFragment : Fragment(), SetsEditorDialogFragment.SetsEditorL
             stopTimer()
         }
         updateUI()
-        onUpdate(exercise, exercise.completedSets, exercise.completedSets)
+        onUpdate(position, exercise, exercise.completedSets, exercise.completedSets)
     }
 
     private fun searchExerciseOnline(exerciseName: String) {

@@ -110,8 +110,9 @@ class ExerciseDeserializer : JsonDeserializer<Exercise> {
         val remainingSeconds = jsonObject.get("remainingSeconds")?.asInt ?: 0
         val timerEndTime = jsonObject.get("timerEndTime")?.asLong ?: 0L
         val rating = jsonObject.get("rating")?.asString ?: "good"
+        val timerDurationSeconds = jsonObject.get("timerDurationSeconds")?.asInt ?: 0
 
-        return Exercise(title, weight, reps, sets, notes, completedSets, isTimerActive, remainingSeconds, timerEndTime, rating)
+        return Exercise(title, weight, reps, sets, notes, completedSets, isTimerActive, remainingSeconds, timerEndTime, rating, timerDurationSeconds)
     }
 }
 

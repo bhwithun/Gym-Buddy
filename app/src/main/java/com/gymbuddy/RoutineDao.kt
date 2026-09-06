@@ -17,6 +17,9 @@ interface RoutineDao {
     @Query("SELECT * FROM routine_days WHERE dayOfWeek = :dayOfWeek LIMIT 1")
     suspend fun getByDayOfWeek(dayOfWeek: Int): RoutineDayEntity?
 
+    @Query("SELECT * FROM routine_days WHERE dayOfWeek = :dayOfWeek LIMIT 1")
+    fun getByDayOfWeekSync(dayOfWeek: Int): RoutineDayEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(vararg days: RoutineDayEntity)
 

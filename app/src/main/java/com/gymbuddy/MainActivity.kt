@@ -1,6 +1,7 @@
 package com.gymbuddy
 
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
@@ -21,6 +22,10 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val gson = Gson()
+
+    companion object {
+        const val EXTRA_OPEN_WORKOUT = "com.gymbuddy.OPEN_WORKOUT"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,8 +89,18 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        if (savedInstanceState == null) {
+        if (intent.getBooleanExtra(EXTRA_OPEN_WORKOUT, false)) {
+            binding.bottomNavigation.selectedItemId = R.id.navigation_workout
+        } else if (savedInstanceState == null) {
             replaceFragment(RoutineFragment())
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_WORKOUT, false)) {
+            binding.bottomNavigation.selectedItemId = R.id.navigation_workout
         }
     }
 
