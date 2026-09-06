@@ -56,9 +56,12 @@
             android:paddingEnd="4dp">
 
             <LinearLayout
+                android:id="@+id/stats_area"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
                 android:gravity="center"
                 android:orientation="vertical">
 

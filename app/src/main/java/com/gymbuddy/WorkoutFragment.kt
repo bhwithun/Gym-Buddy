@@ -47,11 +47,20 @@ class WorkoutFragment : Fragment() {
 
     companion object {
         private const val ARG_MAKEUP_DAY = "makeup_day"
+        private const val ARG_INITIAL_PAGE = "initial_page"
 
         fun newInstance(makeupDayOfWeek: Int): WorkoutFragment {
             val fragment = WorkoutFragment()
             val args = Bundle()
             args.putInt(ARG_MAKEUP_DAY, makeupDayOfWeek)
+            fragment.arguments = args
+            return fragment
+        }
+
+        fun withInitialPage(page: Int): WorkoutFragment {
+            val fragment = WorkoutFragment()
+            val args = Bundle()
+            args.putInt(ARG_INITIAL_PAGE, page)
             fragment.arguments = args
             return fragment
         }
@@ -131,6 +140,7 @@ class WorkoutFragment : Fragment() {
 
     private fun loadWorkout(preservePage: Boolean = false) {
         val pageToRestore = if (preservePage && _binding != null) binding.viewPager.currentItem else -1
+        val requestedPage = if (!preservePage) arguments?.getInt(ARG_INITIAL_PAGE, -1) ?: -1 else -1
         val token = ++loadToken
         lifecycleScope.launch {
             if (token != loadToken) return@launch
@@ -221,6 +231,7 @@ class WorkoutFragment : Fragment() {
 
                 val firstIncompleteIndex = exercises.indexOfFirst { it.completedSets < it.sets }
                 val targetPage = when {
+                    requestedPage in exercises.indices -> requestedPage
                     pageToRestore in exercises.indices -> pageToRestore
                     firstIncompleteIndex != -1 -> firstIncompleteIndex
                     else -> 0

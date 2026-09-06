@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_OPEN_WORKOUT = "com.gymbuddy.OPEN_WORKOUT"
+        const val EXTRA_EXERCISE_INDEX = "com.gymbuddy.EXERCISE_INDEX"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,7 +83,7 @@ class MainActivity : AppCompatActivity() {
 
             when (item.itemId) {
                 R.id.navigation_routine -> replaceFragment(RoutineFragment())
-                R.id.navigation_workout -> replaceFragment(WorkoutFragment())
+                R.id.navigation_workout -> replaceFragment(workoutFragmentFromIntent())
                 R.id.navigation_protein -> replaceFragment(ProteinFragment())
                 R.id.navigation_about -> replaceFragment(AboutFragment())
             }
@@ -100,8 +101,18 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         if (intent.getBooleanExtra(EXTRA_OPEN_WORKOUT, false)) {
-            binding.bottomNavigation.selectedItemId = R.id.navigation_workout
+            if (binding.bottomNavigation.selectedItemId == R.id.navigation_workout) {
+                replaceFragment(workoutFragmentFromIntent())
+            } else {
+                binding.bottomNavigation.selectedItemId = R.id.navigation_workout
+            }
         }
+    }
+
+    private fun workoutFragmentFromIntent(): WorkoutFragment {
+        val page = intent.getIntExtra(EXTRA_EXERCISE_INDEX, -1)
+        intent.removeExtra(EXTRA_EXERCISE_INDEX)
+        return if (page >= 0) WorkoutFragment.withInitialPage(page) else WorkoutFragment()
     }
 
     fun replaceFragment(fragment: Fragment) {

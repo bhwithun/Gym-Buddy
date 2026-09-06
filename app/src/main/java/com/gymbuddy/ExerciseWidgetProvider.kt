@@ -314,6 +314,10 @@ class ExerciseWidgetProvider : AppWidgetProvider() {
 
             applyTipMode(context, views, appWidgetId, exercise)
             views.setOnClickPendingIntent(
+                R.id.stats_area,
+                openAppPendingIntent(context, appWidgetId, displayIndex)
+            )
+            views.setOnClickPendingIntent(
                 R.id.title_text,
                 clickPendingIntent(context, appWidgetId, CLICK_SHOW_TIP, displayIndex)
             )
@@ -439,11 +443,23 @@ class ExerciseWidgetProvider : AppWidgetProvider() {
             return days.getOrElse(dayOfWeek - 1) { "" }
         }
 
-        fun openAppIntent(context: Context): Intent {
+        fun openAppIntent(context: Context, exerciseIndex: Int = -1): Intent {
             return Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 putExtra(MainActivity.EXTRA_OPEN_WORKOUT, true)
+                if (exerciseIndex >= 0) {
+                    putExtra(MainActivity.EXTRA_EXERCISE_INDEX, exerciseIndex)
+                }
             }
+        }
+
+        private fun openAppPendingIntent(context: Context, appWidgetId: Int, exerciseIndex: Int): PendingIntent {
+            return PendingIntent.getActivity(
+                context,
+                appWidgetId * 10 + CLICK_OPEN_APP,
+                openAppIntent(context, exerciseIndex),
+                pendingFlags(immutable = true)
+            )
         }
 
         fun pendingFlags(immutable: Boolean): Int {
