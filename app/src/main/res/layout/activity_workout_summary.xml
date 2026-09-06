@@ -41,10 +41,22 @@
         android:textSize="13sp" />
 
     <TextView
+        android:id="@+id/editDurationLink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:padding="8dp"
+        android:text="@string/summary_edit_duration"
+        android:textColor="#00FFFF"
+        android:textSize="16sp" />
+
+    <TextView
         android:id="@+id/timeRange"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
+        android:clickable="true"
+        android:focusable="true"
         android:gravity="center"
         android:textColor="#FFFFFF"
         android:textSize="16sp"
@@ -72,6 +84,18 @@
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         android:textStyle="bold"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/statsLink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:padding="8dp"
+        android:text="@string/worker_stats_link"
+        android:textColor="#00FFFF"
+        android:textSize="16sp"
         android:visibility="gone"
         tools:visibility="visible" />
 

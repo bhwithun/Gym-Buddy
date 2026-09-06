@@ -49,11 +49,16 @@ class AboutFragment : Fragment() {
         }
         binding.workerUrlInput.setText(WorkerRemote.getUrl(requireContext()) ?: "")
         binding.workerTokenInput.setText(WorkerRemote.getToken(requireContext()) ?: "")
+        binding.workerStatsLink.setOnClickListener {
+            WorkerRemote.openDashboard(requireContext())
+        }
+        refreshWorkerStatsLink()
         binding.workerSaveButton.setOnClickListener {
             val url = binding.workerUrlInput.text.toString()
             val token = binding.workerTokenInput.text.toString()
             WorkerRemote.save(requireContext(), url, token)
             binding.workerUrlInput.setText(WorkerRemote.getUrl(requireContext()) ?: "")
+            refreshWorkerStatsLink()
             val message = if (WorkerRemote.isConfigured(requireContext())) {
                 R.string.worker_saved
             } else {
@@ -61,6 +66,11 @@ class AboutFragment : Fragment() {
             }
             android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun refreshWorkerStatsLink() {
+        binding.workerStatsLink.visibility =
+            if (WorkerRemote.isConfigured(requireContext())) View.VISIBLE else View.GONE
     }
 
     private fun loadAboutInfo() {

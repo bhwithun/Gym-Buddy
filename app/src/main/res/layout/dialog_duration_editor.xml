@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/summary_edit_duration"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/summary_edit_hours"
+            android:textColor="@color/onSurfaceVariant" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/hoursMinus"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:text="-"
+                android:textSize="24sp" />
+
+            <EditText
+                android:id="@+id/hoursEdit"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:inputType="number"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+            <Button
+                android:id="@+id/hoursPlus"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:text="+"
+                android:textSize="24sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/summary_edit_minutes"
+            android:textColor="@color/onSurfaceVariant" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/minutesMinus"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:text="-"
+                android:textSize="24sp" />
+
+            <EditText
+                android:id="@+id/minutesEdit"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:inputType="number"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+            <Button
+                android:id="@+id/minutesPlus"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:text="+"
+                android:textSize="24sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/summary_edit_seconds"
+            android:textColor="@color/onSurfaceVariant" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/secondsMinus"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:text="-"
+                android:textSize="24sp" />
+
+            <EditText
+                android:id="@+id/secondsEdit"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:inputType="number"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+            <Button
+                android:id="@+id/secondsPlus"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:text="+"
+                android:textSize="24sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/cancelButton"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="@android:string/cancel"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+            <Button
+                android:id="@+id/okButton"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="@android:string/ok"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

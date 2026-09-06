@@ -42,7 +42,7 @@ object WorkoutPushClient {
     fun buildPayload(context: Context, summary: WorkoutClock.Summary): WorkoutPayload {
         val workout = WorkoutRepository.loadOrCreateToday(context)
         return WorkoutPayload(
-            date = WorkoutRepository.todayDateString(),
+            date = WorkoutRepository.dateString(summary.startMs),
             isMakeup = workout.isMakeup,
             dayOfWeek = workout.dayOfWeek,
             startMs = summary.startMs,

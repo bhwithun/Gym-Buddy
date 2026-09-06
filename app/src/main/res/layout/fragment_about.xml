@@ -93,10 +93,22 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:layout_marginBottom="24dp"
             android:backgroundTint="@color/primary"
             android:text="@string/worker_save"
             android:textAllCaps="false"
             android:textColor="@color/onPrimary" />
+
+        <TextView
+            android:id="@+id/workerStatsLink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp"
+            android:padding="8dp"
+            android:text="@string/worker_stats_link"
+            android:textColor="@color/weight_color"
+            android:textSize="16sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
     </LinearLayout>
 </ScrollView>

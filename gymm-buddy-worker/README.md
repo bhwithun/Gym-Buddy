@@ -10,12 +10,19 @@ When you complete every set for the day, Gym Buddy can show a **Gym time** scree
 
 Pushing sends a JSON snapshot of that session to your worker:
 
-- Calendar date
+- **Date the workout started** (if you train past midnight, it still counts as that start day)
 - Whether it was a makeup day
 - Start time, end time, and duration
 - Each exercise (name, weight, reps, sets, completed sets, rating, notes)
 
-The worker stores that snapshot in Cloudflare KV, keyed by date (`workout:YYYY-MM-DD`). Later you can list dates or fetch one day. It is a personal log in the cloud, not a social network and not a shared Gym Buddy backend.
+There is **one workout per calendar start-day**. Pushing again for the same start date **replaces** the previous snapshot.
+
+The worker stores that snapshot in Cloudflare KV. Opening the worker URL in a browser shows a **calendar** of days you did and did not train, plus:
+
+- **Total gym time** since your first pushed workout
+- **Year-to-date** workouts, gym time, and sets
+
+It is a personal log in the cloud, not a social network and not a shared Gym Buddy backend.
 
 ## The two fields on the About page
 
@@ -66,9 +73,11 @@ You need a [Cloudflare](https://dash.cloudflare.com/sign-up) account and [Node.j
 
 ### Check that it worked
 
+Open the worker URL in a browser for the calendar. JSON:
+
 ```bash
 # Health check (no token required)
-curl https://gymm-buddy-worker.<account>.workers.dev/
+curl https://gymm-buddy-worker.<account>.workers.dev/health
 
 # List stored dates (send the token if you set one)
 curl -H "Authorization: Bearer YOUR_TOKEN" \
@@ -83,9 +92,10 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET` | `/` | Health check |
-| `POST` | `/workouts` | Store or replace one day's snapshot (`date` must be `YYYY-MM-DD`) |
+| `GET` | `/` | Calendar dashboard (HTML) |
+| `GET` | `/health` | Health check |
+| `POST` | `/workouts` | Store or **replace** the snapshot for that start date |
 | `GET` | `/workouts` | List stored dates |
 | `GET` | `/workouts/YYYY-MM-DD` | Fetch one day |
 
-If `INGEST_TOKEN` is set on the worker, every path except `GET /` requires `Authorization: Bearer <token>`.
+If `INGEST_TOKEN` is set on the worker, every path except `GET /` and `GET /health` requires `Authorization: Bearer <token>`.

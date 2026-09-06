@@ -1,6 +1,8 @@
 package com.gymbuddy
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
@@ -27,6 +29,18 @@ object WorkerRemote {
             .putString(KEY_URL, url.trim())
             .putString(KEY_TOKEN, token.trim())
             .apply()
+    }
+
+    fun openDashboard(context: Context): Boolean {
+        val url = getUrl(context) ?: return false
+        return try {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
+            )
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 
     fun normalizeUrl(raw: String): String {

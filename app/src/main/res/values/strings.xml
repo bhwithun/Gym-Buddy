@@ -15,8 +15,13 @@
     <string name="widget_pie_description">Completed %1$d of %2$d sets</string>
     <string name="widget_no_tip">No tip</string>
     <string name="summary_title">Gym time</string>
-    <string name="summary_tap_time">tap for details</string>
-    <string name="summary_tap_time_digital">tap for clock</string>
+    <string name="summary_tap_time">tap for details · hold to edit</string>
+    <string name="summary_tap_time_digital">tap for clock · hold to edit</string>
+    <string name="summary_edit_duration">Edit gym time</string>
+    <string name="summary_edit_hours">Hours</string>
+    <string name="summary_edit_minutes">Minutes</string>
+    <string name="summary_edit_seconds">Seconds</string>
+    <string name="summary_edit_invalid">Enter a valid number</string>
     <string name="summary_range">%1$s  →  %2$s</string>
     <string name="summary_stats">%1$d exercises  ·  %2$d sets</string>
     <string name="summary_done">Done</string>
@@ -29,6 +34,7 @@
     <string name="worker_save">Save worker</string>
     <string name="worker_saved">Worker saved</string>
     <string name="worker_cleared">Worker cleared</string>
+    <string name="worker_stats_link">View gym stats</string>
     <string name="worker_help_link">How to set up a worker</string>
     <string name="worker_help_url">https://github.com/bhwithun/Gym-Buddy/blob/main/gymm-buddy-worker/README.md</string>
 </resources>

@@ -57,8 +57,10 @@ object WorkoutRepository {
     private val gson = Gson()
     private val exerciseListType = object : TypeToken<List<Exercise>>() {}.type
 
-    fun todayDateString(): String =
-        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    fun todayDateString(): String = dateString(System.currentTimeMillis())
+
+    fun dateString(millis: Long): String =
+        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(millis))
 
     fun todayDayOfWeek(): Int = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
 

@@ -141,6 +141,30 @@ object WorkoutClock {
         return PendingIntent.getActivity(context, SUMMARY_REQUEST, intent, flags)
     }
 
+    fun updateTimes(context: Context, startMs: Long, endMs: Long) {
+        val start = max(0L, startMs)
+        val end = max(start, endMs)
+        prefs(context).edit()
+            .putLong(KEY_START, start)
+            .putLong(KEY_END, end)
+            .commit()
+    }
+
+    fun durationParts(ms: Long): Triple<Int, Int, Int> {
+        val totalSec = max(0L, ms / 1000L)
+        val h = (totalSec / 3600L).toInt()
+        val m = ((totalSec % 3600L) / 60L).toInt()
+        val s = (totalSec % 60L).toInt()
+        return Triple(h, m, s)
+    }
+
+    fun durationFromParts(hours: Int, minutes: Int, seconds: Int): Long {
+        val h = hours.coerceIn(0, 23)
+        val m = minutes.coerceIn(0, 59)
+        val s = seconds.coerceIn(0, 59)
+        return ((h * 3600L) + (m * 60L) + s) * 1000L
+    }
+
     fun formatDuration(ms: Long): String {
         val totalSec = max(0L, ms / 1000L)
         val h = totalSec / 3600

@@ -9,7 +9,7 @@ import androidx.core.content.res.ResourcesCompat
 import com.gymbuddy.databinding.ActivityWorkoutSummaryBinding
 import kotlin.concurrent.thread
 
-class WorkoutSummaryActivity : AppCompatActivity() {
+class WorkoutSummaryActivity : AppCompatActivity(), DurationEditorDialogFragment.DurationEditorListener {
 
     private lateinit var binding: ActivityWorkoutSummaryBinding
     private var showingWords = false
@@ -50,11 +50,7 @@ class WorkoutSummaryActivity : AppCompatActivity() {
 
         summaryData = summary
         durationMs = summary.durationMs
-        binding.timeRange.text = getString(
-            R.string.summary_range,
-            WorkoutClock.formatClock(summary.startMs),
-            WorkoutClock.formatClock(summary.endMs)
-        )
+        renderRange()
         binding.statsLine.text = getString(
             R.string.summary_stats,
             summary.exerciseCount,
@@ -66,13 +62,50 @@ class WorkoutSummaryActivity : AppCompatActivity() {
             showingWords = !showingWords
             renderDuration()
         }
+        binding.durationValue.setOnLongClickListener {
+            openDurationEditor()
+            true
+        }
+        binding.editDurationLink.setOnClickListener { openDurationEditor() }
+        binding.timeRange.setOnClickListener { openDurationEditor() }
         if (WorkerRemote.isConfigured(this)) {
             binding.pushButton.visibility = View.VISIBLE
             binding.pushButton.setOnClickListener { pushToWorker() }
+            binding.statsLink.visibility = View.VISIBLE
+            binding.statsLink.setOnClickListener { WorkerRemote.openDashboard(this) }
         } else {
             binding.pushButton.visibility = View.GONE
+            binding.statsLink.visibility = View.GONE
         }
         binding.doneButton.setOnClickListener { close() }
+    }
+
+    private fun openDurationEditor() {
+        DurationEditorDialogFragment.newInstance(durationMs)
+            .show(supportFragmentManager, "duration_editor")
+    }
+
+    override fun onDurationUpdated(durationMs: Long) {
+        val summary = summaryData ?: return
+        val endMs = summary.startMs + durationMs
+        summaryData = summary.copy(endMs = endMs, durationMs = durationMs)
+        this.durationMs = durationMs
+        WorkoutClock.updateTimes(this, summary.startMs, endMs)
+        renderRange()
+        renderDuration()
+        if (binding.pushButton.visibility == View.VISIBLE) {
+            binding.pushButton.isEnabled = true
+            binding.pushButton.setText(R.string.summary_push)
+        }
+    }
+
+    private fun renderRange() {
+        val summary = summaryData ?: return
+        binding.timeRange.text = getString(
+            R.string.summary_range,
+            WorkoutClock.formatClock(summary.startMs),
+            WorkoutClock.formatClock(summary.endMs)
+        )
     }
 
     private fun renderDuration() {
