@@ -6,7 +6,7 @@
     android:minHeight="110dp"
     android:minResizeWidth="180dp"
     android:minResizeHeight="110dp"
-    android:previewLayout="@layout/widget_exercise_item"
+    android:previewLayout="@layout/widget_exercise"
     android:resizeMode="horizontal|vertical"
     android:targetCellHeight="2"
     android:targetCellWidth="4"

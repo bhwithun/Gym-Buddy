@@ -4,6 +4,14 @@
     <string name="widget_description">Swipe between today\'s exercises, tap the pie to log a set, and watch rest time decay around the ring.</string>
     <string name="widget_empty_rest">Rest day</string>
     <string name="widget_empty_none">No workout today</string>
+    <string name="widget_makeup_banner">Makeup: %1$s</string>
+    <string name="widget_empty_makeup_rest">Makeup rest day</string>
+    <string name="widget_label_weight">Weight</string>
+    <string name="widget_label_reps">Reps</string>
+    <string name="widget_label_sets">Sets</string>
     <string name="widget_pie_content_description">Exercise progress pie</string>
+    <string name="widget_prev">Previous exercise</string>
+    <string name="widget_next">Next exercise</string>
     <string name="widget_pie_description">Completed %1$d of %2$d sets</string>
+    <string name="widget_no_tip">No tip</string>
 </resources>

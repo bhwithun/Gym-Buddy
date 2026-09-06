@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Wide faint halo around the pie -->
+    <item>
+        <shape
+            android:innerRadiusRatio="3.35"
+            android:shape="ring"
+            android:thicknessRatio="6.5"
+            android:useLevel="true">
+            <solid android:color="#2AFF6B6B" />
+        </shape>
+    </item>
+    <item>
+        <shape
+            android:innerRadiusRatio="3.42"
+            android:shape="ring"
+            android:thicknessRatio="9"
+            android:useLevel="true">
+            <solid android:color="#45FF6B6B" />
+        </shape>
+    </item>
+    <item>
+        <shape
+            android:innerRadiusRatio="3.48"
+            android:shape="ring"
+            android:thicknessRatio="13"
+            android:useLevel="true">
+            <solid android:color="#66FF8080" />
+        </shape>
+    </item>
+    <!-- Tightest glow hugging the pie edge -->
+    <item>
+        <shape
+            android:innerRadiusRatio="3.55"
+            android:shape="ring"
+            android:thicknessRatio="20"
+            android:useLevel="true">
+            <solid android:color="#7AFF6B6B" />
+        </shape>
+    </item>
+</layer-list>

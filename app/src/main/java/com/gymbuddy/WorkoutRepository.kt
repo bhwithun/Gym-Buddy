@@ -11,8 +11,47 @@ import java.util.Locale
 data class TodayWorkout(
     val exercises: List<Exercise>,
     val isRest: Boolean,
-    val hasRoutine: Boolean
+    val hasRoutine: Boolean,
+    val isMakeup: Boolean = false,
+    val dayOfWeek: Int = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
 )
+
+object MakeupSession {
+    private const val PREFS = "makeup_session"
+    private const val KEY_DAY = "day_of_week"
+    private const val KEY_DATE = "date"
+
+    fun getDayOfWeek(context: Context): Int? {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val storedDate = prefs.getString(KEY_DATE, null) ?: return null
+        if (storedDate != WorkoutRepository.todayDateString()) {
+            clear(context)
+            return null
+        }
+        val day = prefs.getInt(KEY_DAY, -1)
+        val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+        if (day !in 1..7 || day == today) {
+            clear(context)
+            return null
+        }
+        return day
+    }
+
+    fun set(context: Context, dayOfWeek: Int) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_DAY, dayOfWeek)
+            .putString(KEY_DATE, WorkoutRepository.todayDateString())
+            .commit()
+    }
+
+    fun clear(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
+    }
+}
 
 object WorkoutRepository {
     private val gson = Gson()
@@ -21,26 +60,63 @@ object WorkoutRepository {
     fun todayDateString(): String =
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
+    fun todayDayOfWeek(): Int = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+
     fun loadOrCreateToday(context: Context): TodayWorkout {
         val db = AppDatabase.getDatabase(context)
-        val dayOfWeek = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+        val makeupDay = MakeupSession.getDayOfWeek(context)
+        val dayOfWeek = makeupDay ?: todayDayOfWeek()
+        val isMakeup = makeupDay != null
         val routine = db.routineDao().getByDayOfWeekSync(dayOfWeek)
-            ?: return TodayWorkout(emptyList(), isRest = false, hasRoutine = false)
+            ?: return TodayWorkout(emptyList(), isRest = false, hasRoutine = false, isMakeup, dayOfWeek)
 
         if (routine.isRest) {
-            return TodayWorkout(emptyList(), isRest = true, hasRoutine = true)
+            return TodayWorkout(emptyList(), isRest = true, hasRoutine = true, isMakeup, dayOfWeek)
         }
 
         val dateStr = todayDateString()
         val existing = db.workoutLogDao().getByDate(dateStr)
         if (existing != null) {
             val logged: List<Exercise> = gson.fromJson(existing.loggedJson, exerciseListType) ?: emptyList()
-            return TodayWorkout(logged, isRest = false, hasRoutine = true)
+            return TodayWorkout(logged, isRest = false, hasRoutine = true, isMakeup, dayOfWeek)
         }
 
         val exercises = routine.exercises
         saveTodayExercises(context, exercises)
-        return TodayWorkout(exercises, isRest = false, hasRoutine = true)
+        return TodayWorkout(exercises, isRest = false, hasRoutine = true, isMakeup, dayOfWeek)
+    }
+
+    /**
+     * Makes [dayOfWeek] the active workout (sticky makeup, or today if it matches the calendar).
+     * Replaces today's log with that day's routine only when the active day actually changes,
+     * so returning to an in-progress makeup session keeps set progress.
+     */
+    fun switchActiveDay(context: Context, dayOfWeek: Int) {
+        val today = todayDayOfWeek()
+        val currentMakeup = MakeupSession.getDayOfWeek(context)
+        val wantMakeup = dayOfWeek != today
+        val alreadyOnThisDay = if (wantMakeup) currentMakeup == dayOfWeek else currentMakeup == null
+
+        if (wantMakeup) {
+            MakeupSession.set(context, dayOfWeek)
+        } else {
+            MakeupSession.clear(context)
+        }
+
+        if (alreadyOnThisDay) return
+
+        val routine = AppDatabase.getDatabase(context).routineDao().getByDayOfWeekSync(dayOfWeek) ?: return
+        if (routine.isRest) return
+        val fresh = routine.exercises.map { exercise ->
+            exercise.copy(
+                completedSets = 0,
+                isTimerActive = false,
+                remainingSeconds = 0,
+                timerEndTime = 0,
+                timerDurationSeconds = 0
+            )
+        }
+        saveTodayExercises(context, fresh)
     }
 
     fun saveTodayExercises(context: Context, exercises: List<Exercise>) {

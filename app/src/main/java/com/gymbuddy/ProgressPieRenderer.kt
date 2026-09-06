@@ -5,7 +5,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.RectF
 import kotlin.math.min
 
 object ProgressPieRenderer {
@@ -15,9 +14,6 @@ object ProgressPieRenderer {
     private val segmentDone = Color.parseColor("#00FF00")
     private val segmentTodo = Color.parseColor("#424242")
     private val checkColor = Color.parseColor("#2A2A2A")
-    private val timerColor = Color.parseColor("#FF6B6B")
-    private val timerTrackColor = Color.parseColor("#33FF6B6B")
-    private val timerGlowColor = Color.parseColor("#88FF6B6B")
 
     fun drawPie(
         canvas: Canvas,
@@ -104,71 +100,20 @@ object ProgressPieRenderer {
     fun createWidgetBitmap(
         sizePx: Int,
         completedSets: Int,
-        totalSets: Int,
-        timerFraction: Float,
-        pulse: Boolean
+        totalSets: Int
     ): Bitmap {
         val size = sizePx.coerceAtLeast(64)
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-
-        val ringStroke = size * 0.08f
-        val gap = size * 0.03f
-        val inset = ringStroke + gap
-
-        canvas.save()
-        canvas.translate(inset, inset)
-        val pieSize = size - 2f * inset
         drawPie(
             canvas = canvas,
-            width = pieSize,
-            height = pieSize,
+            width = size.toFloat(),
+            height = size.toFloat(),
             completedSets = completedSets,
             totalSets = totalSets,
             segmented = true,
             outlineEnabled = true
         )
-        canvas.restore()
-
-        val cx = size / 2f
-        val cy = size / 2f
-        val ringRadius = size / 2f - ringStroke / 2f
-        drawTimerRing(canvas, cx, cy, ringRadius, ringStroke, timerFraction, pulse)
         return bitmap
-    }
-
-    private fun drawTimerRing(
-        canvas: Canvas,
-        cx: Float,
-        cy: Float,
-        radius: Float,
-        stroke: Float,
-        fraction: Float,
-        pulse: Boolean
-    ) {
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeCap = Paint.Cap.ROUND
-        }
-
-        if (pulse) {
-            paint.color = timerGlowColor
-            paint.strokeWidth = stroke * 2.2f
-            canvas.drawCircle(cx, cy, radius, paint)
-            paint.color = timerColor
-            paint.strokeWidth = stroke * 1.35f
-            canvas.drawCircle(cx, cy, radius, paint)
-            return
-        }
-
-        if (fraction <= 0f) return
-
-        paint.strokeWidth = stroke
-        paint.color = timerTrackColor
-        canvas.drawCircle(cx, cy, radius, paint)
-
-        paint.color = timerColor
-        val oval = RectF(cx - radius, cy - radius, cx + radius, cy + radius)
-        canvas.drawArc(oval, -90f, 360f * fraction.coerceIn(0f, 1f), false, paint)
     }
 }

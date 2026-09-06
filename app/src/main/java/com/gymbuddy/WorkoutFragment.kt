@@ -16,7 +16,6 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.gymbuddy.databinding.FragmentWorkoutBinding
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,7 +36,7 @@ class WorkoutFragment : Fragment() {
     private var currentSwelledPosition = -1
     private var loadToken = 0
     private val reloadFromWidget = Runnable {
-        if (isAdded && _binding != null && !isMakeup) {
+        if (isAdded && _binding != null) {
             loadWorkout(preservePage = true)
         }
     }
@@ -63,10 +62,20 @@ class WorkoutFragment : Fragment() {
         arguments?.let {
             val day = it.getInt(ARG_MAKEUP_DAY, -1)
             if (day != -1) {
-                makeupDayOfWeek = day
-                isMakeup = true
+                if (day == WorkoutRepository.todayDayOfWeek()) {
+                    MakeupSession.clear(requireContext())
+                } else {
+                    MakeupSession.set(requireContext(), day)
+                }
             }
         }
+        restoreMakeupFromSession()
+    }
+
+    private fun restoreMakeupFromSession() {
+        val sessionDay = MakeupSession.getDayOfWeek(requireContext())
+        makeupDayOfWeek = sessionDay
+        isMakeup = sessionDay != null
     }
 
     private fun getDayName(dayOfWeek: Int): String {
@@ -89,19 +98,24 @@ class WorkoutFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        // Set the date
-        if (isMakeup) {
-            binding.dateText.text = "Makeup: ${getDayName(makeupDayOfWeek!!)}"
-        } else {
-            val dateFormat = SimpleDateFormat("EEE MMM d, yyyy", Locale.getDefault())
-            binding.dateText.text = dateFormat.format(Date())
-        }
+        restoreMakeupFromSession()
+        applyHeader()
         binding.makeupLink.setOnClickListener {
             lifecycleScope.launch {
                 showMakeupDayDialog()
             }
         }
         loadWorkout()
+    }
+
+    private fun applyHeader() {
+        if (_binding == null) return
+        if (isMakeup && makeupDayOfWeek != null) {
+            binding.dateText.text = "Makeup: ${getDayName(makeupDayOfWeek!!)}"
+        } else {
+            val dateFormat = SimpleDateFormat("EEE MMM d, yyyy", Locale.getDefault())
+            binding.dateText.text = dateFormat.format(Date())
+        }
     }
 
     override fun onStart() {
@@ -120,54 +134,29 @@ class WorkoutFragment : Fragment() {
         val token = ++loadToken
         lifecycleScope.launch {
             if (token != loadToken) return@launch
-            val loadedDay = makeupDayOfWeek ?: Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-            val day = withContext(Dispatchers.IO) {
-                AppDatabase.getDatabase(requireContext()).routineDao().getByDayOfWeek(loadedDay)
+            val workout = withContext(Dispatchers.IO) {
+                WorkoutRepository.loadOrCreateToday(requireContext())
             }
             if (token != loadToken || _binding == null) return@launch
-            if (day?.isRest == true) {
+
+            makeupDayOfWeek = if (workout.isMakeup) workout.dayOfWeek else null
+            isMakeup = workout.isMakeup
+            applyHeader()
+
+            if (workout.isRest) {
                 Toast.makeText(requireContext(), "Rest Day!", Toast.LENGTH_SHORT).show()
                 binding.viewPager.adapter = null
-            } else if (day != null) {
-                val baseExercises: List<Exercise> = day.exercises
-                val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            } else if (workout.hasRoutine) {
                 exercises.clear()
-
-                if (isMakeup) {
-                    // For makeup days, always start fresh with base exercises
-                    exercises.addAll(baseExercises)
-                    val plannedJson = gson.toJson(exercises.map { it.copy(completedSets = 0) })
-                    val loggedJson = gson.toJson(exercises)
-                    val log = WorkoutLogEntity(dateStr, plannedJson, loggedJson)
-                    withContext(Dispatchers.IO) {
-                        AppDatabase.getDatabase(requireContext()).workoutLogDao().insert(log)
-                    }
-                } else {
-                    val existingLog = withContext(Dispatchers.IO) {
-                        AppDatabase.getDatabase(requireContext()).workoutLogDao().getByDate(dateStr)
-                    }
-                    if (existingLog != null) {
-                        // Load from log
-                        val loggedExercises: List<Exercise> = gson.fromJson(existingLog.loggedJson, object : TypeToken<List<Exercise>>() {}.type)
-                        exercises.addAll(loggedExercises)
-                    } else {
-                        // Create new log
-                        exercises.addAll(baseExercises)
-                        val plannedJson = gson.toJson(exercises.map { it.copy(completedSets = 0) })
-                        val loggedJson = gson.toJson(exercises)
-                        val log = WorkoutLogEntity(dateStr, plannedJson, loggedJson)
-                        withContext(Dispatchers.IO) {
-                            AppDatabase.getDatabase(requireContext()).workoutLogDao().insert(log)
-                        }
-                    }
-                }
+                exercises.addAll(workout.exercises)
 
                 if (token != loadToken || _binding == null) return@launch
 
                 val adapter = ExercisePagerAdapter(this@WorkoutFragment, exercises, { position ->
                     saveWorkoutLog()
                     updateBackgroundColor()
-                 }, { position, updatedExercise, _, _ ->
+                    ExerciseWidgetProvider.refreshAll(requireContext())
+                 }, { position, updatedExercise, oldCompleted, newCompleted ->
                      // Update by index so renames (and any field edits) always stick
                      if (position in exercises.indices) {
                          exercises[position] = updatedExercise
@@ -180,6 +169,9 @@ class WorkoutFragment : Fragment() {
                      saveWorkoutLog()
                      // Also update the routine template for this day (including makeup target day)
                      persistExerciseToRoutine(position, updatedExercise)
+                     if (oldCompleted != newCompleted || !updatedExercise.isTimerActive) {
+                         ExerciseWidgetProvider.refreshAll(requireContext())
+                     }
                  })
 
                 binding.viewPager.adapter = adapter
@@ -261,7 +253,6 @@ class WorkoutFragment : Fragment() {
                 val loggedJson = gson.toJson(exercises)
                 val log = WorkoutLogEntity(dateStr, plannedJson, loggedJson)
                 AppDatabase.getDatabase(context).workoutLogDao().insert(log)
-                ExerciseWidgetProvider.refreshCollection(context)
             }
         }
     }
@@ -372,6 +363,11 @@ class WorkoutFragment : Fragment() {
         }
 
         val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+        val currentDay = makeupDayOfWeek ?: today
+        val preselectIndex = availableDayOfWeeks.indexOf(currentDay)
+        if (preselectIndex >= 0 && !isRestDay[preselectIndex]) {
+            adapter.setSelectedPosition(preselectIndex)
+        }
 
         AlertDialog.Builder(requireContext())
             .setTitle("Select Makeup Day")
@@ -380,12 +376,13 @@ class WorkoutFragment : Fragment() {
                 val selectedIndex = adapter.getSelectedPosition()
                 if (selectedIndex != -1) {
                     val selectedDayOfWeek = availableDayOfWeeks[selectedIndex]
-                    if (selectedDayOfWeek == today) {
-                        // Selected today - navigate to regular workout, not makeup
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.IO) {
+                            WorkoutRepository.switchActiveDay(requireContext(), selectedDayOfWeek)
+                        }
+                        if (!isAdded) return@launch
+                        ExerciseWidgetProvider.refreshAll(requireContext())
                         (requireActivity() as MainActivity).replaceFragment(WorkoutFragment())
-                    } else {
-                        // Selected another day - do makeup
-                        (requireActivity() as MainActivity).replaceFragment(WorkoutFragment.newInstance(selectedDayOfWeek))
                     }
                 }
             }
