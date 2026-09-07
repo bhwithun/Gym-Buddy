@@ -1,8 +1,5 @@
-const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+import { authorize, corsHeaders, json, readJsonBody } from "./http";
+import { handleRoutineApi, renderRoutineEditorPage } from "./routines";
 
 const INDEX_KEY = "index";
 
@@ -27,12 +24,20 @@ export default {
         return await renderDashboard(env);
       }
       if (request.method === "GET" && url.pathname === "/health") {
-        return json({ service: "gymm-buddy-worker", ok: true });
+        return json({ service: "gymm-buddy-worker", ok: true, authRequired: Boolean(env.INGEST_TOKEN) });
+      }
+      if (request.method === "GET" && url.pathname === "/routine") {
+        return renderRoutineEditorPage();
       }
 
       const authorized = await authorize(request, env);
       if (!authorized) {
         return json({ error: "unauthorized" }, 401);
+      }
+
+      const routineResponse = await handleRoutineApi(request, env, url);
+      if (routineResponse) {
+        return routineResponse;
       }
 
       if (request.method === "POST" && url.pathname === "/workouts") {
@@ -67,12 +72,12 @@ export default {
 } satisfies ExportedHandler<Env>;
 
 async function saveWorkout(request: Request, env: Env): Promise<Response> {
-  let payload: Record<string, unknown>;
-  try {
-    payload = (await request.json()) as Record<string, unknown>;
-  } catch {
+  const parsed = await readJsonBody(request);
+  if (!parsed.ok) return parsed.response;
+  if (!parsed.value || typeof parsed.value !== "object" || Array.isArray(parsed.value)) {
     return json({ error: "invalid json" }, 400);
   }
+  const payload = parsed.value as Record<string, unknown>;
   let date = typeof payload.date === "string" ? payload.date : "";
   const startMs = typeof payload.startMs === "number" ? payload.startMs : 0;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) && startMs > 0) {
@@ -141,13 +146,10 @@ async function loadIndex(env: Env): Promise<IndexEntry[]> {
   const listed = await listWorkoutDates(env);
   let index = await readStoredIndex(env);
   const indexed = new Set(index.map((item) => item.date));
-  const listedSet = new Set(listed);
   const missing = listed.filter((date) => !indexed.has(date));
-  const stale = index.some((item) => !listedSet.has(item.date));
-  if (missing.length === 0 && !stale) {
+  if (missing.length === 0) {
     return index;
   }
-  index = index.filter((item) => listedSet.has(item.date));
   for (const date of missing) {
     const stored = await env.WORKOUTS.get(`workout:${date}`);
     if (!stored) continue;
@@ -176,32 +178,6 @@ function dateFromMillis(ms: number): string {
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
   const day = String(d.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
-}
-
-async function authorize(request: Request, env: Env): Promise<boolean> {
-  const expected = env.INGEST_TOKEN;
-  if (!expected) {
-    return true;
-  }
-  const header = request.headers.get("Authorization") ?? "";
-  const provided = header.startsWith("Bearer ") ? header.slice(7) : header;
-  return timingSafeEqualString(provided, expected);
-}
-
-async function timingSafeEqualString(provided: string, expected: string): Promise<boolean> {
-  const encoder = new TextEncoder();
-  const [providedHash, expectedHash] = await Promise.all([
-    crypto.subtle.digest("SHA-256", encoder.encode(provided)),
-    crypto.subtle.digest("SHA-256", encoder.encode(expected)),
-  ]);
-  return crypto.subtle.timingSafeEqual(providedHash, expectedHash);
-}
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
 }
 
 async function renderDashboard(env: Env): Promise<Response> {
@@ -245,7 +221,7 @@ async function renderDashboard(env: Env): Promise<Response> {
 <body>
   <main>
     <h1>Gym Buddy</h1>
-    <p class="sub">One workout per day. History from 1 Jan 2020 is estimated: Mon/Tue/Thu/Fri, 1 hour, off the first week of July and the week of Christmas. A later push replaces that day. Sessions that cross midnight count on the start day.</p>
+    <p class="sub">One workout per day. History from 1 Jan 2020 is estimated: Tue/Thu in 2020, then Mon/Tue/Thu/Fri from 2021, 1 hour, off the first week of July and the week of Christmas. A later push replaces that day. Sessions that cross midnight count on the start day. <a href="/routine" style="color:#00ffff">Edit routines</a></p>
     <div class="totals">
       <div class="card">
         <div class="label">Total gym time</div>

@@ -10,6 +10,7 @@ object WorkerRemote {
     private const val PREFS = "worker_remote_prefs"
     private const val KEY_URL = "worker_url"
     private const val KEY_TOKEN = "worker_token"
+    private const val KEY_LAST_ROUTINE_NAME = "last_routine_name"
 
     fun isConfigured(context: Context): Boolean = !getUrl(context).isNullOrBlank()
 
@@ -31,8 +32,20 @@ object WorkerRemote {
             .apply()
     }
 
-    fun openDashboard(context: Context): Boolean {
-        val url = getUrl(context) ?: return false
+    fun lastRoutineName(context: Context): String =
+        prefs(context).getString(KEY_LAST_ROUTINE_NAME, null)?.trim().orEmpty()
+
+    fun saveLastRoutineName(context: Context, name: String) {
+        prefs(context).edit().putString(KEY_LAST_ROUTINE_NAME, name.trim()).apply()
+    }
+
+    fun openDashboard(context: Context): Boolean = openPath(context, "")
+
+    fun openRoutineEditor(context: Context): Boolean = openPath(context, "/routine")
+
+    fun openPath(context: Context, path: String): Boolean {
+        val base = getUrl(context) ?: return false
+        val url = if (path.isBlank()) base else "$base/${path.trimStart('/')}"
         return try {
             context.startActivity(
                 Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)

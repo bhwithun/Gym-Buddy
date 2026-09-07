@@ -1,12 +1,14 @@
 /**
- * Estimated history: Mon/Tue/Thu/Fri, 1 hour, from 2020-01-01 through today.
+ * Estimated history from 2020-01-01 through today, 1 hour per visit.
+ * 2020: Tue/Thu only. 2021 onward: Mon/Tue/Thu/Fri.
  * Off: first week of July (1–7) and the Sun–Sat week containing Christmas.
  * Does not overwrite KEEP_DATES (real pushes).
  */
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const TRAIN_JS_DAYS = new Set([1, 2, 4, 5]); // Mon, Tue, Thu, Fri
+const TRAIN_JS_DAYS = new Set([1, 2, 4, 5]); // Mon, Tue, Thu, Fri from 2021
+const TRAIN_2020_JS_DAYS = new Set([2, 4]); // Tue, Thu
 const DURATION_MS = 60 * 60 * 1000;
 const EXERCISE_COUNT = 5;
 const SET_COUNT = 16;
@@ -54,6 +56,11 @@ function androidDayOfWeek(jsDay) {
   return jsDay === 0 ? 1 : jsDay + 1;
 }
 
+function isTrainDay(d) {
+  const days = d.getFullYear() === 2020 ? TRAIN_2020_JS_DAYS : TRAIN_JS_DAYS;
+  return days.has(d.getDay());
+}
+
 const bulk = [];
 const index = [];
 const cursor = new Date(START.getFullYear(), START.getMonth(), START.getDate());
@@ -61,7 +68,7 @@ const cursor = new Date(START.getFullYear(), START.getMonth(), START.getDate());
 while (cursor <= END) {
   const date = ymd(cursor);
   if (
-    TRAIN_JS_DAYS.has(cursor.getDay()) &&
+    isTrainDay(cursor) &&
     !KEEP_DATES.has(date) &&
     !isFirstWeekOfJuly(cursor) &&
     !isChristmasWeek(cursor)

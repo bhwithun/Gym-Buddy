@@ -35,6 +35,21 @@
     <string name="worker_saved">Worker saved</string>
     <string name="worker_cleared">Worker cleared</string>
     <string name="worker_stats_link">View gym stats</string>
+    <string name="worker_routines_link">Edit routines on PC</string>
     <string name="worker_help_link">How to set up a worker</string>
+    <string name="routine_backup">Backup</string>
+    <string name="routine_restore">Restore</string>
+    <string name="routine_edit_on_pc">Edit on PC</string>
+    <string name="routine_backup_title">Backup routine</string>
+    <string name="routine_backup_message">Name this version. Saving the same name again overwrites that version on the worker.</string>
+    <string name="routine_backup_name_hint">Version name</string>
+    <string name="routine_name_required">Enter a name</string>
+    <string name="routine_backup_ok">Saved “%1$s” to worker</string>
+    <string name="routine_backup_failed">Could not backup routine</string>
+    <string name="routine_restore_title">Restore routine</string>
+    <string name="routine_restore_empty">No named routines on the worker yet. Backup this one or edit on PC.</string>
+    <string name="routine_restore_ok">Restored “%1$s”</string>
+    <string name="routine_restore_failed">Could not restore routine</string>
+    <string name="routine_worker_missing">Set a worker URL in About first</string>
     <string name="worker_help_url">https://github.com/bhwithun/Gym-Buddy/blob/main/gymm-buddy-worker/README.md</string>
 </resources>

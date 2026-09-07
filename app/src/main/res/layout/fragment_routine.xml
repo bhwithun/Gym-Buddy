@@ -8,43 +8,57 @@
     tools:context=".RoutineFragment">
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/exportButton"
+        android:id="@+id/backupButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:text="Export Routine"
+        android:text="@string/routine_backup"
         android:textColor="@color/onPrimary"
         app:backgroundTint="@color/primary"
-        app:layout_constraintEnd_toStartOf="@+id/importButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         app:cornerRadius="8dp"
         app:icon="@android:drawable/ic_menu_save"
-        app:iconTint="@color/onPrimary" />
+        app:iconTint="@color/onPrimary"
+        app:layout_constraintEnd_toStartOf="@+id/restoreButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/importButton"
+        android:id="@+id/restoreButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:text="Import Routine"
+        android:text="@string/routine_restore"
         android:textColor="@color/onPrimary"
         app:backgroundTint="@color/primary"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/exportButton"
-        app:layout_constraintTop_toTopOf="parent"
         app:cornerRadius="8dp"
         app:icon="@android:drawable/ic_menu_upload"
-        app:iconTint="@color/onPrimary" />
+        app:iconTint="@color/onPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/backupButton"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/editOnPcLink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="@string/routine_edit_on_pc"
+        android:textColor="@color/weight_color"
+        android:textSize="16sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/backupButton"
+        tools:visibility="visible" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/exportButton"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        app:layout_constraintTop_toBottomOf="@+id/editOnPcLink" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

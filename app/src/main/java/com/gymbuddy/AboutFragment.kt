@@ -52,6 +52,9 @@ class AboutFragment : Fragment() {
         binding.workerStatsLink.setOnClickListener {
             WorkerRemote.openDashboard(requireContext())
         }
+        binding.workerRoutinesLink.setOnClickListener {
+            WorkerRemote.openRoutineEditor(requireContext())
+        }
         refreshWorkerStatsLink()
         binding.workerSaveButton.setOnClickListener {
             val url = binding.workerUrlInput.text.toString()
@@ -69,8 +72,9 @@ class AboutFragment : Fragment() {
     }
 
     private fun refreshWorkerStatsLink() {
-        binding.workerStatsLink.visibility =
-            if (WorkerRemote.isConfigured(requireContext())) View.VISIBLE else View.GONE
+        val visible = if (WorkerRemote.isConfigured(requireContext())) View.VISIBLE else View.GONE
+        binding.workerStatsLink.visibility = visible
+        binding.workerRoutinesLink.visibility = visible
     }
 
     private fun loadAboutInfo() {
