@@ -14,10 +14,6 @@ import com.gymbuddy.databinding.FragmentRoutineBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 
 class RoutineFragment : Fragment() {
 
@@ -47,7 +43,7 @@ class RoutineFragment : Fragment() {
         refreshEditorLink()
 
         binding.backupButton.setOnClickListener { promptBackup(dao) }
-        binding.restoreButton.setOnClickListener { promptRestore(dao) }
+        binding.restoreButton.setOnClickListener { promptRestore() }
         binding.editOnPcLink.setOnClickListener {
             if (!WorkerRemote.openRoutineEditor(requireContext())) {
                 toast(R.string.routine_worker_missing)
@@ -103,6 +99,11 @@ class RoutineFragment : Fragment() {
             result.fold(
                 onSuccess = { record ->
                     WorkerRemote.saveLastRoutineName(requireContext(), record.name)
+                    WorkerRemote.markStandardAccepted(
+                        requireContext(),
+                        record.name,
+                        record.updatedAt
+                    )
                     Toast.makeText(
                         requireContext(),
                         getString(R.string.routine_backup_ok, record.name),
@@ -120,7 +121,7 @@ class RoutineFragment : Fragment() {
         }
     }
 
-    private fun promptRestore(dao: RoutineDao) {
+    private fun promptRestore() {
         if (!WorkerRemote.isConfigured(requireContext())) {
             toast(R.string.routine_worker_missing)
             return
@@ -136,13 +137,13 @@ class RoutineFragment : Fragment() {
                         return@fold
                     }
                     val labels = versions.map { version ->
-                        val whenUpdated = formatUpdated(version.updatedAt)
+                        val whenUpdated = RoutineSync.formatUpdated(version.updatedAt)
                         if (whenUpdated.isBlank()) version.name else "${version.name}\n$whenUpdated"
                     }.toTypedArray()
                     MaterialAlertDialogBuilder(requireContext())
                         .setTitle(R.string.routine_restore_title)
                         .setItems(labels) { _, which ->
-                            restore(dao, versions[which])
+                            restore(versions[which])
                         }
                         .setNegativeButton(android.R.string.cancel, null)
                         .show()
@@ -158,24 +159,15 @@ class RoutineFragment : Fragment() {
         }
     }
 
-    private fun restore(dao: RoutineDao, version: RoutineCloudClient.Version) {
+    private fun restore(version: RoutineCloudClient.Version) {
         setBusy(true)
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                RoutineCloudClient.get(requireContext(), version.id).mapCatching { record ->
-                    val entities = RoutineExport.toEntities(record.days)
-                        ?: error("Invalid routine: must contain exactly 7 days")
-                    dao.deleteAll()
-                    dao.insertAll(*entities.toTypedArray())
-                    val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-                    AppDatabase.getDatabase(requireContext()).workoutLogDao().deleteByDate(dateStr)
-                    record
-                }
+                RoutineSync.restore(requireContext(), version)
             }
             setBusy(false)
             result.fold(
                 onSuccess = { record ->
-                    WorkerRemote.saveLastRoutineName(requireContext(), record.name)
                     Toast.makeText(
                         requireContext(),
                         getString(R.string.routine_restore_ok, record.name),
@@ -200,21 +192,6 @@ class RoutineFragment : Fragment() {
 
     private fun toast(message: Int) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-    }
-
-    private fun formatUpdated(iso: String): String {
-        return try {
-            val parsed = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
-                timeZone = TimeZone.getTimeZone("UTC")
-            }.parse(iso)
-                ?: SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-                    timeZone = TimeZone.getTimeZone("UTC")
-                }.parse(iso)
-            if (parsed == null) iso.replace('T', ' ').take(16)
-            else SimpleDateFormat("MMM d, yyyy h:mm a", Locale.getDefault()).format(parsed)
-        } catch (_: Exception) {
-            iso.replace('T', ' ').take(16)
-        }
     }
 
     override fun onDestroyView() {

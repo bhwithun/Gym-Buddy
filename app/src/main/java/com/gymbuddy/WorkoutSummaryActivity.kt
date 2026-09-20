@@ -131,7 +131,8 @@ class WorkoutSummaryActivity : AppCompatActivity(), DurationEditorDialogFragment
             runOnUiThread {
                 if (isFinishing) return@runOnUiThread
                 if (result.isSuccess) {
-                    binding.pushButton.setText(R.string.summary_pushed)
+                    WorkerRemote.openDashboard(this)
+                    close()
                 } else {
                     binding.pushButton.isEnabled = true
                     binding.pushButton.setText(R.string.summary_push)

@@ -68,6 +68,9 @@ class AboutFragment : Fragment() {
                 R.string.worker_cleared
             }
             android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
+            if (WorkerRemote.isConfigured(requireContext())) {
+                (activity as? MainActivity)?.let { StandardRoutineOffer.maybeCheck(it) }
+            }
         }
     }
 

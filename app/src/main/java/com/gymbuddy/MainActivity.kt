@@ -87,6 +87,9 @@ class MainActivity : AppCompatActivity() {
                 R.id.navigation_protein -> replaceFragment(ProteinFragment())
                 R.id.navigation_about -> replaceFragment(AboutFragment())
             }
+            if (item.itemId != R.id.navigation_workout) {
+                StandardRoutineOffer.maybeCheck(this)
+            }
             true
         }
 
@@ -96,6 +99,19 @@ class MainActivity : AppCompatActivity() {
             replaceFragment(RoutineFragment())
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        StandardRoutineOffer.onActivityStarted(this)
+    }
+
+    override fun onStop() {
+        StandardRoutineOffer.onActivityStopped(this)
+        super.onStop()
+    }
+
+    fun isWorkoutTabSelected(): Boolean =
+        binding.bottomNavigation.selectedItemId == R.id.navigation_workout
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)

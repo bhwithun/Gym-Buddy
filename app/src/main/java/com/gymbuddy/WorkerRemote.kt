@@ -11,6 +11,8 @@ object WorkerRemote {
     private const val KEY_URL = "worker_url"
     private const val KEY_TOKEN = "worker_token"
     private const val KEY_LAST_ROUTINE_NAME = "last_routine_name"
+    private const val KEY_STANDARD_APPLIED = "standard_applied_updated_at"
+    private const val KEY_STANDARD_NEVER = "standard_never_updated_at"
 
     fun isConfigured(context: Context): Boolean = !getUrl(context).isNullOrBlank()
 
@@ -26,9 +28,42 @@ object WorkerRemote {
     }
 
     fun save(context: Context, url: String, token: String) {
+        val previous = getUrl(context)
+        val trimmed = url.trim()
+        val next = if (trimmed.isEmpty()) null else normalizeUrl(trimmed)
         prefs(context).edit()
-            .putString(KEY_URL, url.trim())
+            .putString(KEY_URL, trimmed)
             .putString(KEY_TOKEN, token.trim())
+            .apply()
+        if (previous != next) {
+            clearStandardTracking(context)
+        }
+    }
+
+    fun standardAppliedUpdatedAt(context: Context): String =
+        prefs(context).getString(KEY_STANDARD_APPLIED, null)?.trim().orEmpty()
+
+    fun standardNeverUpdatedAt(context: Context): String =
+        prefs(context).getString(KEY_STANDARD_NEVER, null)?.trim().orEmpty()
+
+    fun markStandardAccepted(context: Context, name: String, updatedAt: String) {
+        if (!RoutineSync.isStandardName(name) || updatedAt.isBlank()) return
+        val editor = prefs(context).edit().putString(KEY_STANDARD_APPLIED, updatedAt.trim())
+        if (standardNeverUpdatedAt(context) == updatedAt.trim()) {
+            editor.remove(KEY_STANDARD_NEVER)
+        }
+        editor.apply()
+    }
+
+    fun ignoreStandardUpdatedAt(context: Context, updatedAt: String) {
+        if (updatedAt.isBlank()) return
+        prefs(context).edit().putString(KEY_STANDARD_NEVER, updatedAt.trim()).apply()
+    }
+
+    fun clearStandardTracking(context: Context) {
+        prefs(context).edit()
+            .remove(KEY_STANDARD_APPLIED)
+            .remove(KEY_STANDARD_NEVER)
             .apply()
     }
 

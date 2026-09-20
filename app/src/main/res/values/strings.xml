@@ -51,5 +51,10 @@
     <string name="routine_restore_ok">Restored “%1$s”</string>
     <string name="routine_restore_failed">Could not restore routine</string>
     <string name="routine_worker_missing">Set a worker URL in About first</string>
+    <string name="routine_standard_newer_title">Newer routine on server</string>
+    <string name="routine_standard_newer_message">The Standard backup on the worker is newer than this phone. Restore it now?</string>
+    <string name="routine_standard_newer_message_at">The Standard backup on the worker was updated %1$s. Restore it now?</string>
+    <string name="routine_standard_not_now">Not now</string>
+    <string name="routine_standard_never">Never</string>
     <string name="worker_help_url">https://github.com/bhwithun/Gym-Buddy/blob/main/gymm-buddy-worker/README.md</string>
 </resources>
