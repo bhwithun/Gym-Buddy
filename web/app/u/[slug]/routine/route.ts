@@ -1,6 +1,6 @@
 import { html, json, run } from "../../../../lib/http";
 import { renderRoutineEditor } from "../../../../lib/routine-editor";
-import { getProfile } from "../../../../lib/users";
+import { openProfile, renderPrivate } from "../../../../lib/users";
 
 export const dynamic = "force-dynamic";
 
@@ -9,13 +9,14 @@ type Context = { params: Promise<{ slug: string }> };
 export function GET(request: Request, context: Context) {
   return run(request, async () => {
     const { slug: raw } = await context.params;
-    const profile = await getProfile(decodeURIComponent(raw));
-    if (!profile) return json({ error: "not found" }, 404);
+    const profile = await openProfile(request, decodeURIComponent(raw));
+    if (!profile) return html(renderPrivate());
     return html(
       renderRoutineEditor({
         apiBase: `/u/${profile.id}`,
         calendarHref: `/u/${profile.id}`,
         slug: profile.id,
+        signedIn: true,
       }),
     );
   });

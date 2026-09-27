@@ -2,7 +2,10 @@ import { escapeHtml } from "./http";
 
 const RELEASES = "https://github.com/bhwithun/Gym-Buddy/releases/latest";
 
-export function renderLanding(error = ""): string {
+export function renderLanding(
+  error = "",
+  profiles: { slug: string; displayName: string }[] = [],
+): string {
   const errorHtml = error
     ? `<p class="status err">${escapeHtml(error)}</p>`
     : "";
@@ -35,6 +38,16 @@ export function renderLanding(error = ""): string {
     <h1>Gym Buddy</h1>
     <p>An Android app for the week's routine, logging sets as you lift, protein for the day, and a home-screen exercise widget.</p>
     <p>Each person gets their own gym calendar and their own named routine backups. The phone stores workouts on the device. Cloud backup starts after you connect a profile.</p>
+    ${
+      profiles.length
+        ? `<div class="card"><h2>Your profiles</h2>${profiles
+            .map(
+              (profile) =>
+                `<p><strong>${escapeHtml(profile.displayName)}</strong><br><a href="/u/${escapeHtml(profile.slug)}">Gym log</a> · <a href="/u/${escapeHtml(profile.slug)}/routine">Edit routines</a></p>`,
+            )
+            .join("")}</div>`
+        : ""
+    }
     <p><a class="download" href="${RELEASES}">Download the latest release</a></p>
     <p class="hint">That link opens the newest GitHub release of Gym Buddy. Install the APK from there, then come back to this page and create a profile.</p>
     <div class="card">
@@ -48,7 +61,7 @@ export function renderLanding(error = ""): string {
         <label>Profile address
           <input name="slug" type="text" required maxlength="63" pattern="[A-Za-z0-9][A-Za-z0-9-]{0,62}" autocapitalize="none" spellcheck="false" placeholder="your-name" />
         </label>
-        <p class="hint">Your calendar will live at /u/your-name. Anyone with that link can view it. Changing workouts and routines needs the token in the QR code.</p>
+        <p class="hint">This browser will remember the profile. The gym log and routines stay private. The phone connects by scanning the QR code, and you never copy a token.</p>
         <button type="submit">Create profile</button>
       </form>
     </div>

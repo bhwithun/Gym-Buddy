@@ -40,10 +40,8 @@ export async function renderConnect(options: {
     <h1>${escapeHtml(options.displayName)}</h1>
     <p>Install Gym Buddy from the <a href="https://github.com/bhwithun/Gym-Buddy/releases/latest">latest GitHub release</a>. In the app, open About and tap <strong>Scan profile</strong>, then point the camera at this code.</p>
     <p>${qr.replace("<svg ", '<svg class="qr" ')}</p>
-    <p>The code connects this phone to <a href="${escapeHtml(calendarUrl)}">${escapeHtml(calendarUrl)}</a>.</p>
-    <p class="hint">Bookmark the calendar link above. It does not include your token. Anyone with that link can view the calendar. The token is what lets the app push workouts and change routines.</p>
-    <p>For the routine editor on a computer, open <a href="${escapeHtml(profilePath)}/routine">Edit routines</a> and paste this token:</p>
-    <input readonly value="${escapeHtml(options.token)}" />
+    <p>This browser can now open <a href="${escapeHtml(calendarUrl)}">the gym log</a> and <a href="${escapeHtml(profilePath)}/routine">edit routines</a>. Come back any time from <a href="/">the Gym Buddy home page</a>. Other people cannot open them.</p>
+    <p class="hint">Scan the code with the phone. You do not need to copy a token.</p>
     <form method="post" action="${escapeHtml(rotateAction)}">
       <button type="submit">Create a new token</button>
     </form>

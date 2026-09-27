@@ -4,6 +4,7 @@ export function renderRoutineEditor(options: {
   apiBase: string;
   calendarHref: string;
   slug: string;
+  signedIn?: boolean;
 }): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -112,6 +113,7 @@ export function renderRoutineEditor(options: {
     const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
     const API_BASE = ${JSON.stringify(options.apiBase)};
     const TOKEN_KEY = ${JSON.stringify(`gb_token_${options.slug}`)};
+    const signedIn = ${options.signedIn === true ? "true" : "false"};
     let token = sessionStorage.getItem(TOKEN_KEY) || "";
     let authRequired = false;
     let versions = [];
@@ -417,6 +419,9 @@ export function renderRoutineEditor(options: {
       });
     }
 
+    if (signedIn) {
+      boot().catch(function (err) { setStatus(err.message, "err"); });
+    } else {
     fetch("/health").then(function (r) { return r.json(); }).then(function (h) {
       authRequired = !!h.authRequired;
       if (authRequired && !token) { showGate(true); return; }
@@ -429,6 +434,7 @@ export function renderRoutineEditor(options: {
         }
       });
     }).catch(function () { boot(); });
+    }
   </script>
 </body>
 </html>`;

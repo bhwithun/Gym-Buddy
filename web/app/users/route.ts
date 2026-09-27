@@ -1,7 +1,7 @@
 import { renderLanding } from "../../lib/landing";
 import { html, json, run } from "../../lib/http";
 import { readProfileRequest } from "../../lib/profile-form";
-import { connectPath, createProfile } from "../../lib/users";
+import { connectPath, createProfile, withProfileCookie } from "../../lib/users";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +30,12 @@ export function POST(request: Request) {
       const origin = new URL(request.url).origin;
       return json({ slug: parsed.slug, displayName: parsed.displayName, connectUrl: `${origin}${path}` }, 201);
     }
-    return new Response(null, { status: 303, headers: { Location: path } });
+    return withProfileCookie(
+      new Response(null, { status: 303, headers: { Location: path } }),
+      request,
+      parsed.slug,
+      created.token,
+    );
   });
 }
 

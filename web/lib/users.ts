@@ -26,9 +26,74 @@ export function tokenMatches(token: string, hash: string): boolean {
   return timingSafeEqual(provided, expected);
 }
 
+const PROFILE_COOKIE = "gb_profiles";
+
+export type BrowserProfile = { slug: string; token: string };
+
 export function bearerToken(request: Request): string {
   const header = request.headers.get("authorization") ?? "";
   return header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+}
+
+export function readBrowserProfiles(request: Request): BrowserProfile[] {
+  const header = request.headers.get("cookie") ?? "";
+  const parts = header.split(";").map((part) => part.trim());
+  const raw = parts.find((part) => part.startsWith(`${PROFILE_COOKIE}=`));
+  if (!raw) return [];
+  let decoded = raw.slice(PROFILE_COOKIE.length + 1);
+  try {
+    decoded = decodeURIComponent(decoded);
+  } catch {
+    return [];
+  }
+  const profiles: BrowserProfile[] = [];
+  for (const entry of decoded.split(",")) {
+    const dot = entry.indexOf(".");
+    if (dot <= 0) continue;
+    const slug = entry.slice(0, dot);
+    const token = entry.slice(dot + 1);
+    if (SLUG_RE.test(slug) && token) profiles.push({ slug, token });
+  }
+  return profiles;
+}
+
+export function browserToken(request: Request, slug: string): string {
+  return readBrowserProfiles(request).find((profile) => profile.slug === slug)?.token ?? "";
+}
+
+export function withProfileCookie(
+  response: Response,
+  request: Request,
+  slug: string,
+  token: string,
+): Response {
+  const profiles = readBrowserProfiles(request).filter((profile) => profile.slug !== slug);
+  profiles.push({ slug, token });
+  const value = encodeURIComponent(profiles.map((profile) => `${profile.slug}.${profile.token}`).join(","));
+  const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  const headers = new Headers(response.headers);
+  headers.append(
+    "Set-Cookie",
+    `${PROFILE_COOKIE}=${value}; HttpOnly; Path=/; Max-Age=31536000; SameSite=Lax${secure}`,
+  );
+  return new Response(response.body, { status: response.status, headers });
+}
+
+export function renderPrivate(): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gym Buddy</title>
+</head>
+<body style="margin:0;background:#121212;color:#eee;font-family:ui-sans-serif,system-ui,sans-serif">
+  <main style="max-width:640px;margin:0 auto;padding:32px 16px">
+    <h1 style="color:#f9f72e">Private</h1>
+    <p>Open <a style="color:#00ffff" href="/">gym.brianandkathi.com</a> in this browser. Your profile is listed there after you have opened its connect page once.</p>
+  </main>
+</body>
+</html>`;
 }
 
 export function slugifyName(name: string): string {
@@ -60,10 +125,32 @@ export async function requireProfile(
 ): Promise<{ ok: true; profile: Profile } | { ok: false; response: Response }> {
   const profile = await getProfile(slug);
   if (!profile) return { ok: false, response: json({ error: "not found" }, 404) };
-  if (!tokenMatches(bearerToken(request), profile.tokenHash)) {
+  const token = bearerToken(request) || browserToken(request, profile.id);
+  if (!tokenMatches(token, profile.tokenHash)) {
     return { ok: false, response: json({ error: "unauthorized" }, 401) };
   }
   return { ok: true, profile };
+}
+
+export async function openProfile(request: Request, slug: string): Promise<Profile | null> {
+  const profile = await getProfile(slug);
+  if (!profile) return null;
+  const token = bearerToken(request) || browserToken(request, profile.id);
+  if (!tokenMatches(token, profile.tokenHash)) return null;
+  return profile;
+}
+
+export async function rememberedProfiles(
+  request: Request,
+): Promise<{ slug: string; displayName: string }[]> {
+  const found: { slug: string; displayName: string }[] = [];
+  for (const entry of readBrowserProfiles(request)) {
+    const profile = await getProfile(entry.slug);
+    if (profile && tokenMatches(entry.token, profile.tokenHash)) {
+      found.push({ slug: profile.id, displayName: profile.displayName });
+    }
+  }
+  return found;
 }
 
 export async function createProfile(

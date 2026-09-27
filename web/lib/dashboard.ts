@@ -10,23 +10,28 @@ export type IndexEntry = {
   partial?: boolean;
 };
 
+export type DashboardView = "all" | "log" | "totals" | "averages";
+
 export type DashboardOptions = {
   displayName: string;
   routinePath: string;
+  view?: DashboardView;
 };
 
 export function renderDashboard(index: IndexEntry[], options: DashboardOptions): string {
   const routinePath = escapeHtml(options.routinePath);
-  const showEstimated = index.some((entry) => entry.estimated);
-  const blurb = showEstimated
-    ? `One workout per day. History from 1 Jan 2020 is estimated: Tue/Thu in 2020, then Mon/Tue/Thu/Fri from 2021, 1 hour, off the first week of July and the week of Christmas. A later push replaces that day. Sessions that cross midnight count on the start day. <a href="${routinePath}">Edit routines</a>`
-    : `${escapeHtml(options.displayName)} · One workout per day. A later push replaces that day. Sessions that cross midnight count on the start day. <a href="${routinePath}">Edit routines</a>`;
+  const view = options.view ?? "all";
+  const compact = view !== "all";
+  const heading = compact
+    ? ""
+    : `<h1>Gym Buddy</h1><p class="who" style="color:#f9f72e;margin:0 0 16px;">${escapeHtml(options.displayName)} · <a href="${routinePath}">Edit routines</a></p>`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gym Buddy</title>
+  <meta name="gb-profile" content="${escapeHtml(options.displayName)}" />
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
@@ -57,13 +62,15 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     .day.hit.est .dur { color: #7dcc9a; }
     .day.today { outline: 2px solid #f9f72e; }
     .detail { margin-top: 16px; min-height: 1.5em; color: #ddd; }
+    body[data-view="log"] .totals, body[data-view="log"] .averages { display: none; }
+    body[data-view="totals"] .averages, body[data-view="totals"] .log { display: none; }
+    body[data-view="averages"] .totals, body[data-view="averages"] .log { display: none; }
+    body.compact main { padding-top: 12px; }
   </style>
 </head>
-<body>
+<body data-view="${view}" class="${compact ? "compact" : ""}">
   <main>
-    <h1>Gym Buddy</h1>
-    <p class="who" style="color:#f9f72e;margin:0 0 8px;">${escapeHtml(options.displayName)}</p>
-    <p class="sub">${blurb}</p>
+    ${heading}
     <div class="totals">
       <div class="card">
         <div class="label">Total gym time</div>
@@ -93,6 +100,7 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
         <div class="meta" id="avg100Meta"></div>
       </div>
     </div>
+    <div class="log">
     <div class="nav">
       <button type="button" id="prev">&lsaquo;</button>
       <h2 id="monthLabel"></h2>
@@ -100,6 +108,7 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     </div>
     <div class="cal" id="cal"></div>
     <div class="detail" id="detail">Tap a green day for that session.</div>
+    </div>
   </main>
   <script>
     const workouts = ${JSON.stringify(index)};

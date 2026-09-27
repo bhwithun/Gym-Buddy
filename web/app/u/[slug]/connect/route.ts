@@ -1,6 +1,6 @@
 import { renderConnect } from "../../../../lib/connect";
 import { html, json, run } from "../../../../lib/http";
-import { connectPath, getProfile, rotateToken, tokenMatches } from "../../../../lib/users";
+import { connectPath, getProfile, rotateToken, tokenMatches, withProfileCookie } from "../../../../lib/users";
 
 export const dynamic = "force-dynamic";
 
@@ -29,13 +29,18 @@ export function GET(request: Request, context: Context) {
       });
     }
     const token = tokenFrom(request);
-    return html(
-      await renderConnect({
-        origin: new URL(request.url).origin,
-        slug: profile.id,
-        displayName: profile.displayName,
-        token,
-      }),
+    return withProfileCookie(
+      html(
+        await renderConnect({
+          origin: new URL(request.url).origin,
+          slug: profile.id,
+          displayName: profile.displayName,
+          token,
+        }),
+      ),
+      request,
+      profile.id,
+      token,
     );
   });
 }
@@ -51,10 +56,15 @@ export function POST(request: Request, context: Context) {
     }
     const token = await rotateToken(profile.id);
     if (!token) return json({ error: "not found" }, 404);
-    return new Response(null, {
-      status: 303,
-      headers: { Location: connectPath(profile.id, token) },
-    });
+    return withProfileCookie(
+      new Response(null, {
+        status: 303,
+        headers: { Location: connectPath(profile.id, token) },
+      }),
+      request,
+      profile.id,
+      token,
+    );
   });
 }
 
