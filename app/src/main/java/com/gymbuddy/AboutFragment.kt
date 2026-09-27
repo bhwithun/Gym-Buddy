@@ -8,9 +8,6 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.text.SpannableString
-import android.text.TextPaint
-import android.text.method.LinkMovementMethod
-import android.text.style.ClickableSpan
 import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
@@ -109,6 +106,7 @@ class AboutFragment : Fragment() {
                 PackageManager.PERMISSION_GRANTED
             if (granted) startProfileScan() else cameraPermission.launch(Manifest.permission.CAMERA)
         }
+        binding.disconnectLink.setOnClickListener { disconnectProfile() }
         binding.manualToggle.setOnClickListener {
             manualOpen = !manualOpen
             renderConnection()
@@ -157,6 +155,7 @@ class AboutFragment : Fragment() {
         binding.manualToggle.visibility = setupVisibility
         binding.manualFields.visibility = if (!connected && manualOpen) View.VISIBLE else View.GONE
         binding.manualToggle.setText(if (manualOpen) R.string.about_hide_manual else R.string.about_manual)
+        binding.disconnectLink.visibility = if (connected) View.VISIBLE else View.GONE
         if (connected) {
             showConnected(WorkerRemote.profileSlug(context) ?: url!!)
             binding.statsWeb.visibility = View.VISIBLE
@@ -178,25 +177,8 @@ class AboutFragment : Fragment() {
     }
 
     private fun showConnected(name: String) {
-        val action = getString(R.string.about_disconnect_inline)
-        val line = getString(R.string.about_connected, name, action)
-        val start = line.lastIndexOf('(')
-        val text = SpannableString(line)
-        if (start >= 0) {
-            text.setSpan(object : ClickableSpan() {
-                override fun onClick(widget: View) {
-                    disconnectProfile()
-                }
-
-                override fun updateDrawState(ds: TextPaint) {
-                    ds.color = Color.parseColor("#00FFFF")
-                    ds.isUnderlineText = false
-                }
-            }, start, line.length, 0)
-        }
-        binding.profileStatus.text = text
-        binding.profileStatus.movementMethod = LinkMovementMethod.getInstance()
-        binding.profileStatus.highlightColor = Color.TRANSPARENT
+        binding.profileStatus.movementMethod = null
+        binding.profileStatus.text = getString(R.string.about_connected, name)
     }
 
     private fun disconnectProfile() {

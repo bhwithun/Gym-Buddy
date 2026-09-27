@@ -44,7 +44,7 @@
     <string name="worker_stats_link">View gym stats</string>
     <string name="worker_routines_link">Edit routines on PC</string>
     <string name="about_not_connected">No cloud profile connected</string>
-    <string name="about_connected">Connected to %1$s (%2$s)</string>
+    <string name="about_connected">Connected to %1$s</string>
     <string name="about_disconnect_inline">disconnect</string>
     <string name="about_setup_body">Gym time and named routines are stored on a profile.\n\n1. Open gym.brianandkathi.com and create a profile.\n2. Leave the connect page open. It shows a QR code.\n3. Tap Scan profile QR.</string>
     <string name="about_open_site">Open gym.brianandkathi.com</string>

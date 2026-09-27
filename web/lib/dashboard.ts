@@ -69,9 +69,9 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     body.app-embed .shell { min-height: 100vh; }
     body.app-embed main { padding-top: 12px; }
     body.locked .side { display: none; }
-    .totals, .averages { display: grid; gap: 12px; grid-template-columns: 1fr; margin-bottom: 28px; }
-    @media (min-width: 560px) { .totals { grid-template-columns: 1fr 1fr; } }
-    @media (min-width: 720px) { .averages { grid-template-columns: 1fr 1fr 1fr; } }
+    .stats-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    .stats-columns h2 { margin: 0 0 12px; font-size: 18px; color: #f9f72e; }
+    .totals, .averages { display: grid; gap: 12px; grid-template-columns: 1fr; margin: 0; }
     .card { background: #1e1e1e; border: 1px solid #444; border-radius: 16px; padding: 16px 18px; }
     .label { color: #bdbdbd; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
     .value { font-size: 28px; color: #00ff88; margin-top: 6px; font-variant-numeric: tabular-nums; }
@@ -124,6 +124,9 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
   </aside>
   <main>
     <section data-panel="stats">
+    <div class="stats-columns">
+    <div>
+    <h2>Totals</h2>
     <div class="totals">
       <div class="card">
         <div class="label">Total gym time</div>
@@ -136,6 +139,9 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
         <div class="meta" id="ytdMeta"></div>
       </div>
     </div>
+    </div>
+    <div>
+    <h2>Averages</h2>
     <div class="averages">
       <div class="card">
         <div class="label">Last 10 workouts</div>
@@ -152,6 +158,8 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
         <div class="value" id="avg100">—</div>
         <div class="meta" id="avg100Meta"></div>
       </div>
+    </div>
+    </div>
     </div>
     </section>
     <section data-panel="log" class="active">
