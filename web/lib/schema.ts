@@ -81,6 +81,23 @@ async function migrate(sql: Sql): Promise<void> {
   `;
   await sql`CREATE INDEX IF NOT EXISTS routines_user_id_idx ON routines (user_id)`;
   await sql`
+    DELETE FROM routines
+    WHERE user_id IS NOT NULL
+      AND id NOT IN (
+        SELECT id FROM (
+          SELECT DISTINCT ON (user_id) id
+          FROM routines
+          WHERE user_id IS NOT NULL
+          ORDER BY user_id, updated_at DESC, id DESC
+        ) kept
+      )
+  `;
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS routines_one_per_user
+    ON routines (user_id)
+    WHERE user_id IS NOT NULL
+  `;
+  await sql`
     DO $$
     DECLARE
       cname text;

@@ -1,11 +1,9 @@
 package com.gymbuddy
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -42,8 +40,8 @@ class RoutineFragment : Fragment() {
 
         refreshEditorLink()
 
-        binding.backupButton.setOnClickListener { promptBackup(dao) }
-        binding.restoreButton.setOnClickListener { promptRestore() }
+        binding.backupButton.setOnClickListener { confirmBackup(dao) }
+        binding.restoreButton.setOnClickListener { confirmRestore() }
         binding.editOnPcLink.setOnClickListener {
             if (!WorkerRemote.openRoutineEditor(requireContext())) {
                 toast(R.string.routine_worker_missing)
@@ -61,44 +59,31 @@ class RoutineFragment : Fragment() {
             if (WorkerRemote.isConfigured(requireContext())) View.VISIBLE else View.GONE
     }
 
-    private fun promptBackup(dao: RoutineDao) {
+    private fun confirmBackup(dao: RoutineDao) {
         if (!WorkerRemote.isConfigured(requireContext())) {
             toast(R.string.routine_worker_missing)
             return
         }
-        val input = EditText(requireContext()).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS
-            hint = getString(R.string.routine_backup_name_hint)
-            setText(WorkerRemote.lastRoutineName(requireContext()).ifBlank { "My routine" })
-            setPadding(48, 32, 48, 16)
-        }
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.routine_backup_title)
             .setMessage(R.string.routine_backup_message)
-            .setView(input)
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.routine_backup) { _, _ ->
-                val name = input.text.toString().trim()
-                if (name.isEmpty()) {
-                    toast(R.string.routine_name_required)
-                } else {
-                    backup(dao, name)
-                }
+                backup(dao)
             }
             .show()
     }
 
-    private fun backup(dao: RoutineDao, name: String) {
+    private fun backup(dao: RoutineDao) {
         setBusy(true)
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
                 val days = RoutineExport.fromEntities(dao.getAll())
-                RoutineCloudClient.save(requireContext(), name, days)
+                RoutineCloudClient.save(requireContext(), days)
             }
             setBusy(false)
             result.fold(
                 onSuccess = { record ->
-                    WorkerRemote.saveLastRoutineName(requireContext(), record.name)
                     WorkerRemote.markStandardAccepted(
                         requireContext(),
                         record.name,
@@ -106,7 +91,7 @@ class RoutineFragment : Fragment() {
                     )
                     Toast.makeText(
                         requireContext(),
-                        getString(R.string.routine_backup_ok, record.name),
+                        R.string.routine_backup_ok,
                         Toast.LENGTH_SHORT
                     ).show()
                 },
@@ -121,56 +106,33 @@ class RoutineFragment : Fragment() {
         }
     }
 
-    private fun promptRestore() {
+    private fun confirmRestore() {
         if (!WorkerRemote.isConfigured(requireContext())) {
             toast(R.string.routine_worker_missing)
             return
         }
-        setBusy(true)
-        lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) { RoutineCloudClient.list(requireContext()) }
-            setBusy(false)
-            result.fold(
-                onSuccess = { versions ->
-                    if (versions.isEmpty()) {
-                        toast(R.string.routine_restore_empty)
-                        return@fold
-                    }
-                    val labels = versions.map { version ->
-                        val whenUpdated = RoutineSync.formatUpdated(version.updatedAt)
-                        if (whenUpdated.isBlank()) version.name else "${version.name}\n$whenUpdated"
-                    }.toTypedArray()
-                    MaterialAlertDialogBuilder(requireContext())
-                        .setTitle(R.string.routine_restore_title)
-                        .setItems(labels) { _, which ->
-                            restore(versions[which])
-                        }
-                        .setNegativeButton(android.R.string.cancel, null)
-                        .show()
-                },
-                onFailure = { error ->
-                    Toast.makeText(
-                        requireContext(),
-                        error.message ?: getString(R.string.routine_restore_failed),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            )
-        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.routine_restore_title)
+            .setMessage(R.string.routine_restore_message)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.routine_restore) { _, _ ->
+                restore()
+            }
+            .show()
     }
 
-    private fun restore(version: RoutineCloudClient.Version) {
+    private fun restore() {
         setBusy(true)
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                RoutineSync.restore(requireContext(), version)
+                RoutineSync.restore(requireContext())
             }
             setBusy(false)
             result.fold(
-                onSuccess = { record ->
+                onSuccess = {
                     Toast.makeText(
                         requireContext(),
-                        getString(R.string.routine_restore_ok, record.name),
+                        R.string.routine_restore_ok,
                         Toast.LENGTH_SHORT
                     ).show()
                 },

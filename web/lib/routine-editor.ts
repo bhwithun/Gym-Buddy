@@ -14,8 +14,7 @@ export function renderRoutineEditor(options: {
     .routine-root { color: #eee; }
     .routine-root a { color: #00ffff; }
     .routine-root h1 { color: #f9f72e; font-size: 28px; margin: 0; }
-    .layout { display: grid; grid-template-columns: 240px 1fr; gap: 16px; max-width: 1200px; margin: 0 auto; padding: 12px 20px 48px; }
-    @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+    .layout { max-width: 900px; margin: 0 auto; padding: 0 0 48px; }
     .routine-root .card { background: #1e1e1e; border: 1px solid #444; border-radius: 16px; padding: 14px; }
     .versions { display: flex; flex-direction: column; gap: 8px; }
     .versions button.new { background: #5B2C6F; color: #fff; border: 0; border-radius: 10px; padding: 10px; cursor: pointer; font-size: 14px; }
@@ -59,17 +58,10 @@ export function renderRoutineEditor(options: {
     .modal textarea { min-height: 420px; font-family: ui-monospace, monospace; font-size: 13px; }
   </style>
   <div class="layout">
-    <aside class="card versions">
-      <button type="button" class="new" id="newBtn">New routine</button>
-      <div id="versionList"></div>
-    </aside>
     <section class="card">
       <div class="toolbar">
-        <input class="name" id="nameInput" type="text" placeholder="Name this version" />
         <button type="button" class="primary" id="saveBtn">Save</button>
-        <button type="button" id="saveAsBtn">Save as new</button>
         <button type="button" id="pasteBtn">Edit as JSON</button>
-        <button type="button" class="danger" id="deleteBtn">Delete</button>
       </div>
       <div class="status" id="status"></div>
       <div class="days" id="dayTabs"></div>
@@ -152,32 +144,7 @@ export function renderRoutineEditor(options: {
       document.getElementById("gate").classList.toggle("show", on);
     }
 
-    function renderVersions() {
-      var root = document.getElementById("versionList");
-      root.innerHTML = "";
-      if (!versions.length) {
-        var empty = document.createElement("p");
-        empty.className = "rest";
-        empty.textContent = "No named versions yet.";
-        root.appendChild(empty);
-        return;
-      }
-      versions.forEach(function (v) {
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "ver" + (v.id === currentId ? " active" : "");
-        var name = document.createElement("div");
-        name.className = "name";
-        name.textContent = v.name;
-        var meta = document.createElement("div");
-        meta.className = "meta";
-        meta.textContent = (v.updatedAt || "").replace("T", " ").slice(0, 16);
-        btn.appendChild(name);
-        btn.appendChild(meta);
-        btn.addEventListener("click", function () { loadVersion(v.id); });
-        root.appendChild(btn);
-      });
-    }
+    function renderVersions() {}
 
     function renderTabs() {
       var root = document.getElementById("dayTabs");
@@ -271,80 +238,32 @@ export function renderRoutineEditor(options: {
     }
 
     function applyRecord(rec) {
-      currentId = rec.id || null;
-      document.getElementById("nameInput").value = rec.name || "";
-      days = rec.days;
-      renderVersions();
+      days = rec.days || emptyDays();
       renderTabs();
       renderDay();
     }
 
-    function newRoutine() {
-      currentId = null;
-      document.getElementById("nameInput").value = "";
+    function showEmpty() {
       days = emptyDays();
       activeDay = "Mon";
-      renderVersions();
       renderTabs();
       renderDay();
-      setStatus("New routine — name it and save.");
+      setStatus("No routine stored yet.");
     }
 
-    function payload(asNew) {
-      return {
-        id: asNew ? undefined : (currentId || undefined),
-        name: document.getElementById("nameInput").value.trim(),
-        days: days,
-        overwriteByName: !asNew
-      };
-    }
-
-    function save(asNew) {
-      var body = payload(asNew);
-      if (!body.name) { setStatus("Name this version first.", "err"); return; }
+    function save() {
       var missing = days.some(function (d) {
         return d.exercises.some(function (ex) { return !String(ex.title).trim(); });
       });
       if (missing) { setStatus("Every exercise needs a title.", "err"); return; }
       setStatus("Saving…");
-      var method = (!asNew && currentId) ? "PUT" : "POST";
-      var path = (!asNew && currentId) ? API_BASE + "/routines/" + encodeURIComponent(currentId) : API_BASE + "/routines";
-      api(path, { method: method, body: body }).then(function (rec) {
-        return refreshList().then(function () {
-          applyRecord(rec);
-          setStatus("Saved “" + rec.name + "”.", "ok");
-        });
-      }).catch(function (err) { setStatus(err.message, "err"); });
-    }
-
-    function loadVersion(id) {
-      setStatus("Loading…");
-      api(API_BASE + "/routines/" + encodeURIComponent(id)).then(function (rec) {
+      api(API_BASE + "/routines", { method: "PUT", body: { days: days } }).then(function (rec) {
         applyRecord(rec);
-        setStatus("Loaded “" + rec.name + "”.");
+        setStatus("Saved.", "ok");
       }).catch(function (err) { setStatus(err.message, "err"); });
     }
 
-    function refreshList() {
-      return api(API_BASE + "/routines").then(function (data) {
-        versions = (data && data.routines) || [];
-        renderVersions();
-      });
-    }
-
-    document.getElementById("newBtn").onclick = newRoutine;
-    document.getElementById("saveBtn").onclick = function () { save(false); };
-    document.getElementById("saveAsBtn").onclick = function () { save(true); };
-    document.getElementById("deleteBtn").onclick = function () {
-      if (!currentId) { setStatus("Nothing to delete.", "err"); return; }
-      if (!confirm("Delete this named version?")) return;
-      api(API_BASE + "/routines/" + encodeURIComponent(currentId), { method: "DELETE" }).then(function () {
-        return refreshList().then(function () {
-          newRoutine();
-          setStatus("Deleted.", "ok");
-        });
-      }).catch(function (err) { setStatus(err.message, "err"); });
-    };
+    document.getElementById("saveBtn").onclick = save;
     document.getElementById("addExBtn").onclick = function () {
       dayOf(activeDay).exercises.push(blankExercise());
       renderDay();
@@ -379,13 +298,10 @@ export function renderRoutineEditor(options: {
           });
           return { dayOfWeek: name, exercises: exercises };
         });
-        if (parsed && parsed.name && !document.getElementById("nameInput").value) {
-          document.getElementById("nameInput").value = parsed.name;
-        }
         document.getElementById("pasteModal").classList.remove("show");
         renderTabs();
         renderDay();
-        setStatus("JSON applied. Save the version to keep it on the worker.", "ok");
+        setStatus("JSON applied. Save to keep it on your profile.", "ok");
       } catch (err) {
         setStatus(err.message || "Invalid JSON", "err");
       }
@@ -402,9 +318,8 @@ export function renderRoutineEditor(options: {
     function boot() {
       return api(API_BASE + "/routines").then(function (data) {
         showGate(false);
-        versions = (data && data.routines) || [];
-        if (versions.length) return loadVersion(versions[0].id);
-        newRoutine();
+        if (data && data.routine) applyRecord(data.routine);
+        else showEmpty();
       });
     }
 

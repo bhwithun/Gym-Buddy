@@ -27,45 +27,45 @@ export type RoutineRecord = {
   days: RoutineDay[];
 };
 
-type RoutineIndexEntry = {
-  id: string;
-  name: string;
-  updatedAt: string;
-};
-
 export function isRoutineId(id: string): boolean {
   return ID_RE.test(id);
 }
 
 export async function listRoutines(userId: string): Promise<Response> {
-  await ready();
-  const rows = await sql()`
-    SELECT id, name, updated_at FROM routines WHERE user_id = ${userId} ORDER BY updated_at DESC
-  `;
-  const routines: RoutineIndexEntry[] = rows.map((row) => ({
-    id: String(row.id),
-    name: String(row.name),
-    updatedAt: asIso(row.updated_at),
-  }));
-  return json({ routines });
+  const routine = await readUserRoutine(userId);
+  return json({
+    routine,
+    routines: routine
+      ? [{ id: routine.id, name: routine.name, updatedAt: routine.updatedAt }]
+      : [],
+  });
 }
 
-export async function getRoutine(userId: string, id: string): Promise<Response> {
+export async function getRoutine(userId: string, _id: string): Promise<Response> {
+  const routine = await readUserRoutine(userId);
+  if (!routine) return json({ error: "not found" }, 404);
+  return json(routine);
+}
+
+async function readUserRoutine(userId: string): Promise<RoutineRecord | null> {
   await ready();
   const rows = await sql()`
-    SELECT id, name, updated_at, days FROM routines WHERE user_id = ${userId} AND id = ${id}
+    SELECT id, name, updated_at, days
+    FROM routines
+    WHERE user_id = ${userId}
+    ORDER BY updated_at DESC
+    LIMIT 1
   `;
   const row = rows[0];
-  if (!row) return json({ error: "not found" }, 404);
+  if (!row) return null;
   const days = parseDays(row.days);
-  if (!days) return json({ error: "not found" }, 404);
-  const record: RoutineRecord = {
+  if (!days) return null;
+  return {
     id: String(row.id),
     name: String(row.name),
     updatedAt: asIso(row.updated_at),
     days,
   };
-  return json(record);
 }
 
 export async function saveRoutine(userId: string, request: Request, pathId: string | null): Promise<Response> {
@@ -79,67 +79,43 @@ export async function saveRoutine(userId: string, request: Request, pathId: stri
   const daysResult = normalizeDays(body.days ?? body.routine);
   if (!daysResult.ok) return json({ error: daysResult.error }, 400);
 
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-  if (!name) return json({ error: "name is required" }, 400);
-  if (name.length > 80) return json({ error: "name is too long" }, 400);
-
-  const index = await loadIndex(userId);
-  const overwriteByName = body.overwriteByName === true;
-  let id = pathId;
-  if (!id && typeof body.id === "string" && body.id) id = body.id;
-  if (!id && overwriteByName) {
-    const existing = index.find((entry) => entry.name.toLowerCase() === name.toLowerCase());
-    if (existing) id = existing.id;
-  }
-  if (id && !ID_RE.test(id)) return json({ error: "invalid routine id" }, 400);
-  if (!id) id = makeId(name, new Set(index.map((entry) => entry.id)));
-
-  const owner = await sql()`SELECT user_id FROM routines WHERE id = ${id}`;
-  if (owner.length > 0 && String(owner[0].user_id) !== userId) {
-    const requested = Boolean(pathId || (typeof body.id === "string" && body.id));
-    if (requested) return json({ error: "invalid routine id" }, 409);
-    id = `${id.slice(0, 32)}-${crypto.randomUUID().slice(0, 8)}`;
-  }
-
-  const replacing = index.some((entry) => entry.id === id);
+  const suppliedName = typeof body.name === "string" ? body.name.trim() : "";
+  const name = suppliedName ? suppliedName.slice(0, 80) : "Routine";
+  const existing = await sql()`
+    SELECT id FROM routines WHERE user_id = ${userId} ORDER BY updated_at DESC LIMIT 1
+  `;
+  const id = existing.length > 0 ? String(existing[0].id) : userId;
   const record: RoutineRecord = {
     id,
     name,
     updatedAt: new Date().toISOString(),
     days: daysResult.days,
   };
-  await sql()`
-    INSERT INTO routines (id, user_id, name, updated_at, days)
-    VALUES (${record.id}, ${userId}, ${record.name}, ${record.updatedAt}, ${JSON.stringify(record.days)}::jsonb)
-    ON CONFLICT (id) DO UPDATE SET
-      name = EXCLUDED.name,
-      updated_at = EXCLUDED.updated_at,
-      days = EXCLUDED.days
-    WHERE routines.user_id = ${userId}
-  `;
-  console.log(JSON.stringify({ message: "routine stored", id, name, replaced: replacing }));
-  return json(record, replacing ? 200 : 201);
+  if (existing.length > 0) {
+    await sql()`
+      UPDATE routines
+      SET name = ${record.name}, updated_at = ${record.updatedAt}, days = ${JSON.stringify(record.days)}::jsonb
+      WHERE user_id = ${userId} AND id = ${id}
+    `;
+    await sql()`DELETE FROM routines WHERE user_id = ${userId} AND id <> ${id}`;
+  } else {
+    await sql()`
+      INSERT INTO routines (id, user_id, name, updated_at, days)
+      VALUES (${record.id}, ${userId}, ${record.name}, ${record.updatedAt}, ${JSON.stringify(record.days)}::jsonb)
+    `;
+  }
+  console.log(JSON.stringify({ message: "routine stored", userId, replaced: existing.length > 0 }));
+  return json(record, existing.length > 0 ? 200 : 201);
 }
 
-export async function deleteRoutine(userId: string, id: string): Promise<Response> {
+export async function deleteRoutine(userId: string, _id: string): Promise<Response> {
   await ready();
   const rows = await sql()`
-    DELETE FROM routines WHERE user_id = ${userId} AND id = ${id} RETURNING id
+    DELETE FROM routines WHERE user_id = ${userId} RETURNING id
   `;
   if (rows.length === 0) return json({ error: "not found" }, 404);
-  console.log(JSON.stringify({ message: "routine deleted", id }));
-  return json({ ok: true, id });
-}
-
-async function loadIndex(userId: string): Promise<RoutineIndexEntry[]> {
-  const rows = await sql()`
-    SELECT id, name, updated_at FROM routines WHERE user_id = ${userId}
-  `;
-  return rows.map((row) => ({
-    id: String(row.id),
-    name: String(row.name),
-    updatedAt: asIso(row.updated_at),
-  }));
+  console.log(JSON.stringify({ message: "routine deleted", userId }));
+  return json({ ok: true });
 }
 
 function parseDays(value: unknown): RoutineDay[] | null {
@@ -152,21 +128,6 @@ function parseDays(value: unknown): RoutineDay[] | null {
   }
   if (!Array.isArray(value)) return null;
   return value as RoutineDay[];
-}
-
-function makeId(name: string, existing: Set<string>): string {
-  let base = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-  if (!base) base = "routine";
-  if (!existing.has(base)) return base;
-  let id = `${base.slice(0, 32)}-${crypto.randomUUID().slice(0, 8)}`;
-  while (existing.has(id)) {
-    id = `${base.slice(0, 32)}-${crypto.randomUUID().slice(0, 8)}`;
-  }
-  return id;
 }
 
 export function normalizeDays(

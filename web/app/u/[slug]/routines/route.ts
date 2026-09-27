@@ -24,6 +24,15 @@ export function POST(request: Request, context: Context) {
   });
 }
 
+export function PUT(request: Request, context: Context) {
+  return run(request, async () => {
+    const { slug } = await context.params;
+    const auth = await requireProfile(request, decodeURIComponent(slug));
+    if (!auth.ok) return auth.response;
+    return saveRoutine(auth.profile.id, request, null);
+  });
+}
+
 export function OPTIONS(request: Request) {
   return run(request, async () => json({}));
 }

@@ -6,13 +6,10 @@ import org.junit.Test
 
 class RoutineSyncTest {
 
-    private fun version(name: String, updatedAt: String, id: String = "id") =
-        RoutineCloudClient.Version(id = id, name = name, updatedAt = updatedAt)
-
     @Test
-    fun skipWhenStandardMissing() {
+    fun skipWhenRoutineMissing() {
         val decision = RoutineSync.decideStandardOffer(
-            listOf(version("Other", "2026-09-19T12:00:00.000Z")),
+            updatedAt = null,
             appliedUpdatedAt = "",
             neverUpdatedAt = ""
         )
@@ -21,30 +18,29 @@ class RoutineSyncTest {
 
     @Test
     fun baselineWhenNeverApplied() {
-        val standard = version("Standard", "2026-09-19T12:00:00.000Z")
+        val updatedAt = "2026-09-19T12:00:00.000Z"
         val decision = RoutineSync.decideStandardOffer(
-            listOf(standard),
+            updatedAt,
             appliedUpdatedAt = "",
             neverUpdatedAt = ""
         )
-        assertEquals(StandardOfferDecision.Baseline(standard), decision)
+        assertTrue(decision is StandardOfferDecision.Baseline)
     }
 
     @Test
     fun offerWhenServerNewer() {
-        val standard = version("standard", "2026-09-19T13:00:00.000Z")
         val decision = RoutineSync.decideStandardOffer(
-            listOf(standard),
+            updatedAt = "2026-09-19T13:00:00.000Z",
             appliedUpdatedAt = "2026-09-19T12:00:00.000Z",
             neverUpdatedAt = ""
         )
-        assertEquals(StandardOfferDecision.Offer(standard), decision)
+        assertTrue(decision is StandardOfferDecision.Offer)
     }
 
     @Test
     fun skipWhenSameTimestamp() {
         val decision = RoutineSync.decideStandardOffer(
-            listOf(version("Standard", "2026-09-19T12:00:00.000Z")),
+            updatedAt = "2026-09-19T12:00:00.000Z",
             appliedUpdatedAt = "2026-09-19T12:00:00.000Z",
             neverUpdatedAt = ""
         )
@@ -55,7 +51,7 @@ class RoutineSyncTest {
     fun skipWhenNeverForThisTimestamp() {
         val newer = "2026-09-19T13:00:00.000Z"
         val decision = RoutineSync.decideStandardOffer(
-            listOf(version("Standard", newer)),
+            updatedAt = newer,
             appliedUpdatedAt = "2026-09-19T12:00:00.000Z",
             neverUpdatedAt = newer
         )
@@ -64,20 +60,11 @@ class RoutineSyncTest {
 
     @Test
     fun offerAgainAfterNeverWhenTimestampChanges() {
-        val newest = "2026-09-19T14:00:00.000Z"
-        val standard = version("Standard", newest)
         val decision = RoutineSync.decideStandardOffer(
-            listOf(standard),
+            updatedAt = "2026-09-19T14:00:00.000Z",
             appliedUpdatedAt = "2026-09-19T12:00:00.000Z",
             neverUpdatedAt = "2026-09-19T13:00:00.000Z"
         )
-        assertEquals(StandardOfferDecision.Offer(standard), decision)
-    }
-
-    @Test
-    fun isStandardNameIsCaseInsensitive() {
-        assertTrue(RoutineSync.isStandardName("Standard"))
-        assertTrue(RoutineSync.isStandardName("standard"))
-        assertTrue(RoutineSync.isStandardName("STANDARD"))
+        assertTrue(decision is StandardOfferDecision.Offer)
     }
 }

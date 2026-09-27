@@ -29,29 +29,20 @@ object RoutineCloudClient {
         val days: List<ExportRoutineDay>
     )
 
-    private data class ListResponse(val routines: List<Version>?)
-    private data class SaveBody(
-        val name: String,
-        val days: List<ExportRoutineDay>,
-        val overwriteByName: Boolean
-    )
+    private data class FetchResponse(val routine: Record?)
+    private data class SaveBody(val days: List<ExportRoutineDay>)
 
-    fun list(context: Context): Result<List<Version>> {
-        return request(context, "/routines") { body ->
-            val parsed = RoutineExport.gson().fromJson(body, ListResponse::class.java)
-            parsed.routines.orEmpty()
+    fun fetch(context: Context): Result<Record?> {
+        return request(context, "/routines", allowNotFound = true) { body ->
+            if (body.isBlank()) return@request null
+            val parsed = RoutineExport.gson().fromJson(body, FetchResponse::class.java)
+            parsed.routine
         }
     }
 
-    fun get(context: Context, id: String): Result<Record> {
-        return request(context, "/routines/${id}") { body ->
-            parseRecord(body)
-        }
-    }
-
-    fun save(context: Context, name: String, days: List<ExportRoutineDay>): Result<Record> {
-        val payload = RoutineExport.gson().toJson(SaveBody(name, days, overwriteByName = true))
-        return request(context, "/routines", "POST", payload) { body ->
+    fun save(context: Context, days: List<ExportRoutineDay>): Result<Record> {
+        val payload = RoutineExport.gson().toJson(SaveBody(days))
+        return request(context, "/routines", "PUT", payload) { body ->
             parseRecord(body)
         }
     }
@@ -67,6 +58,7 @@ object RoutineCloudClient {
         path: String,
         method: String = "GET",
         jsonBody: String? = null,
+        allowNotFound: Boolean = false,
         parse: (String) -> T
     ): Result<T> {
         val base = WorkerRemote.getUrl(context)
@@ -85,7 +77,9 @@ object RoutineCloudClient {
         return try {
             http.newCall(builder.build()).execute().use { response ->
                 val body = response.body?.string().orEmpty()
-                if (!response.isSuccessful) {
+                if (allowNotFound && response.code == 404) {
+                    Result.success(parse(""))
+                } else if (!response.isSuccessful) {
                     val message = errorMessage(body, response.code)
                     Result.failure(IllegalStateException(message))
                 } else {

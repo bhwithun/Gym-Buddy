@@ -49,13 +49,13 @@ object StandardRoutineOffer {
         checkInFlight = true
         activity.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                RoutineCloudClient.list(activity.applicationContext)
+                RoutineCloudClient.fetch(activity.applicationContext)
             }
             lastCheckAtMs = System.currentTimeMillis()
             checkInFlight = false
             result.fold(
-                onSuccess = { versions ->
-                    handleVersions(activity, versions)
+                onSuccess = { record ->
+                    handleVersions(activity, record?.updatedAt)
                 },
                 onFailure = { }
             )
@@ -64,13 +64,13 @@ object StandardRoutineOffer {
 
     private fun handleVersions(
         activity: MainActivity,
-        versions: List<RoutineCloudClient.Version>
+        updatedAt: String?
     ) {
         if (activity.isFinishing || activity.isDestroyed) return
         if (activity.isWorkoutTabSelected()) return
         when (
             val decision = RoutineSync.decideStandardOffer(
-                versions,
+                updatedAt,
                 WorkerRemote.standardAppliedUpdatedAt(activity),
                 WorkerRemote.standardNeverUpdatedAt(activity)
             )
@@ -135,7 +135,7 @@ object StandardRoutineOffer {
         restoreInFlight = true
         activity.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                RoutineSync.restore(activity.applicationContext, version)
+                RoutineSync.restore(activity.applicationContext)
             }
             restoreInFlight = false
             if (activity.isFinishing || activity.isDestroyed) return@launch

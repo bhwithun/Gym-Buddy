@@ -16,6 +16,14 @@ object WorkerRemote {
 
     fun isConfigured(context: Context): Boolean = !getUrl(context).isNullOrBlank()
 
+    /** Slug from a saved profile address such as https://host/u/brian. */
+    fun profileSlug(context: Context): String? {
+        val base = getUrl(context) ?: return null
+        val segments = Uri.parse(base).pathSegments
+        if (segments.size == 2 && segments[0] == "u") return segments[1]
+        return null
+    }
+
     fun getUrl(context: Context): String? {
         val raw = prefs(context).getString(KEY_URL, null)?.trim().orEmpty()
         if (raw.isEmpty()) return null
@@ -47,7 +55,8 @@ object WorkerRemote {
         prefs(context).getString(KEY_STANDARD_NEVER, null)?.trim().orEmpty()
 
     fun markStandardAccepted(context: Context, name: String, updatedAt: String) {
-        if (!RoutineSync.isStandardName(name) || updatedAt.isBlank()) return
+        if (updatedAt.isBlank()) return
+        if (name.isBlank()) return
         val editor = prefs(context).edit().putString(KEY_STANDARD_APPLIED, updatedAt.trim())
         if (standardNeverUpdatedAt(context) == updatedAt.trim()) {
             editor.remove(KEY_STANDARD_NEVER)
@@ -89,6 +98,25 @@ object WorkerRemote {
         } catch (_: Exception) {
             false
         }
+    }
+
+    /** https://host/u/slug?token=secret → profile base URL and token. */
+    fun parseProfileQr(raw: String): Pair<String, String>? {
+        val uri = try {
+            Uri.parse(raw.trim())
+        } catch (_: Exception) {
+            return null
+        }
+        if (!uri.scheme.equals("https", ignoreCase = true)) return null
+        val host = uri.host ?: return null
+        val segments = uri.pathSegments
+        if (segments.size != 2 || segments[0] != "u") return null
+        val slug = segments[1]
+        if (!slug.matches(Regex("^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"))) return null
+        val token = uri.getQueryParameter("token")?.trim().orEmpty()
+        if (token.isEmpty()) return null
+        val port = if (uri.port == -1 || uri.port == 443) "" else ":${uri.port}"
+        return "https://$host$port/u/$slug" to token
     }
 
     fun normalizeUrl(raw: String): String {

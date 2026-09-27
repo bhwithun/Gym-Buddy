@@ -37,7 +37,7 @@ export function renderLanding(
   <main>
     <h1>Gym Buddy</h1>
     <p>An Android app for the week's routine, logging sets as you lift, protein for the day, and a home-screen exercise widget.</p>
-    <p>Each person gets their own gym calendar and their own named routine backups. The phone stores workouts on the device. Cloud backup starts after you connect a profile.</p>
+    <p>Each person gets their own gym calendar and one routine. The phone stores workouts on the device. Cloud backup starts after you connect a profile.</p>
     ${
       profiles.length
         ? `<div class="card"><h2>Your profiles</h2>${profiles

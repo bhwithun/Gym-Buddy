@@ -22,24 +22,22 @@ object RoutineSync {
         versions.firstOrNull { isStandardName(it.name) }
 
     fun decideStandardOffer(
-        versions: List<RoutineCloudClient.Version>,
+        updatedAt: String?,
         appliedUpdatedAt: String,
         neverUpdatedAt: String
     ): StandardOfferDecision {
-        val standard = findStandard(versions) ?: return StandardOfferDecision.Skip
-        if (standard.updatedAt.isBlank()) return StandardOfferDecision.Skip
-        if (appliedUpdatedAt.isBlank()) return StandardOfferDecision.Baseline(standard)
-        if (standard.updatedAt <= appliedUpdatedAt) return StandardOfferDecision.Skip
-        if (standard.updatedAt == neverUpdatedAt) return StandardOfferDecision.Skip
-        return StandardOfferDecision.Offer(standard)
+        if (updatedAt.isNullOrBlank()) return StandardOfferDecision.Skip
+        val version = RoutineCloudClient.Version(id = "routine", name = "Routine", updatedAt = updatedAt)
+        if (appliedUpdatedAt.isBlank()) return StandardOfferDecision.Baseline(version)
+        if (updatedAt <= appliedUpdatedAt) return StandardOfferDecision.Skip
+        if (updatedAt == neverUpdatedAt) return StandardOfferDecision.Skip
+        return StandardOfferDecision.Offer(version)
     }
 
-    suspend fun restore(
-        context: Context,
-        version: RoutineCloudClient.Version
-    ): Result<RoutineCloudClient.Record> {
-        val fetched = RoutineCloudClient.get(context, version.id)
+    suspend fun restore(context: Context): Result<RoutineCloudClient.Record> {
+        val fetched = RoutineCloudClient.fetch(context)
         val record = fetched.getOrElse { return Result.failure(it) }
+            ?: return Result.failure(IllegalStateException("No routine on this profile"))
         return try {
             applyRecord(context, record)
             Result.success(record)
