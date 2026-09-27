@@ -1,5 +1,3 @@
-import { createHash, timingSafeEqual } from "node:crypto";
-
 export const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -29,14 +27,21 @@ export function options(): Response {
   return new Response(null, { status: 204, headers: corsHeaders });
 }
 
-export function authorize(request: Request): boolean {
-  const expected = process.env.INGEST_TOKEN ?? "";
-  if (!expected) return true;
-  const header = request.headers.get("Authorization") ?? "";
-  const provided = header.startsWith("Bearer ") ? header.slice(7) : header;
-  const providedHash = createHash("sha256").update(provided).digest();
-  const expectedHash = createHash("sha256").update(expected).digest();
-  return timingSafeEqual(providedHash, expectedHash);
+export function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => {
+    switch (character) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
+  });
 }
 
 export async function readJsonBody(
@@ -60,11 +65,9 @@ export async function readJsonBody(
 export async function run(
   request: Request,
   fn: () => Promise<Response>,
-  auth = false,
 ): Promise<Response> {
   try {
     if (request.method === "OPTIONS") return options();
-    if (auth && !authorize(request)) return json({ error: "unauthorized" }, 401);
     return await fn();
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown";

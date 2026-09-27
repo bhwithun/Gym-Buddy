@@ -1,4 +1,5 @@
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { ensureSchema } from "./schema";
 
 type Sql = NeonQueryFunction<false, false>;
 
@@ -11,6 +12,10 @@ export function sql(): Sql {
   }
   if (!cached) cached = neon(url);
   return cached;
+}
+
+export function ready(): Promise<void> {
+  return ensureSchema(sql());
 }
 
 export function asNumber(value: unknown): number {

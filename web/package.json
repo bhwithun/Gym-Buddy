@@ -5,16 +5,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "import:cloudflare": "node scripts/import-cloudflare.mjs"
+    "import:cloudflare": "node scripts/import-cloudflare.mjs",
+    "claim-owner": "node --experimental-strip-types scripts/claim-owner.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "next": "^15.5.7",
+    "qrcode": "^1.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.1.13",
     "typescript": "^5.9.2"
   }

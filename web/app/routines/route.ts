@@ -1,14 +1,14 @@
+import { profileRequired } from "../../lib/gone";
 import { json, run } from "../../lib/http";
-import { listRoutines, saveRoutine } from "../../lib/routines";
 
 export const dynamic = "force-dynamic";
 
 export function GET(request: Request) {
-  return run(request, () => listRoutines(), true);
+  return run(request, async () => profileRequired());
 }
 
 export function POST(request: Request) {
-  return run(request, () => saveRoutine(request, null), true);
+  return run(request, async () => profileRequired());
 }
 
 export function OPTIONS(request: Request) {

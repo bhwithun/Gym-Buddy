@@ -1,3 +1,5 @@
+import { escapeHtml } from "./http";
+
 export type IndexEntry = {
   date: string;
   durationMs: number;
@@ -5,9 +7,20 @@ export type IndexEntry = {
   exerciseCount: number;
   isMakeup: boolean;
   estimated?: boolean;
+  partial?: boolean;
 };
 
-export function renderDashboard(index: IndexEntry[]): string {
+export type DashboardOptions = {
+  displayName: string;
+  routinePath: string;
+};
+
+export function renderDashboard(index: IndexEntry[], options: DashboardOptions): string {
+  const routinePath = escapeHtml(options.routinePath);
+  const showEstimated = index.some((entry) => entry.estimated);
+  const blurb = showEstimated
+    ? `One workout per day. History from 1 Jan 2020 is estimated: Tue/Thu in 2020, then Mon/Tue/Thu/Fri from 2021, 1 hour, off the first week of July and the week of Christmas. A later push replaces that day. Sessions that cross midnight count on the start day. <a href="${routinePath}">Edit routines</a>`
+    : `${escapeHtml(options.displayName)} · One workout per day. A later push replaces that day. Sessions that cross midnight count on the start day. <a href="${routinePath}">Edit routines</a>`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,6 +52,7 @@ export function renderDashboard(index: IndexEntry[]): string {
     .day.off { color: #666; }
     .day.hit { background: #14331c; border-color: #00aa44; color: #e8ffe8; cursor: pointer; }
     .day.hit.est { background: #1b2a1c; border-color: #2e7d4f; color: #cfe8d4; }
+    .day.hit.part { border-style: dashed; }
     .day.hit .dur { font-size: 10px; color: #00ff88; margin-top: 2px; }
     .day.hit.est .dur { color: #7dcc9a; }
     .day.today { outline: 2px solid #f9f72e; }
@@ -48,7 +62,8 @@ export function renderDashboard(index: IndexEntry[]): string {
 <body>
   <main>
     <h1>Gym Buddy</h1>
-    <p class="sub">One workout per day. History from 1 Jan 2020 is estimated: Tue/Thu in 2020, then Mon/Tue/Thu/Fri from 2021, 1 hour, off the first week of July and the week of Christmas. A later push replaces that day. Sessions that cross midnight count on the start day. <a href="/routine" style="color:#00ffff">Edit routines</a></p>
+    <p class="who" style="color:#f9f72e;margin:0 0 8px;">${escapeHtml(options.displayName)}</p>
+    <p class="sub">${blurb}</p>
     <div class="totals">
       <div class="card">
         <div class="label">Total gym time</div>
@@ -169,7 +184,7 @@ export function renderDashboard(index: IndexEntry[]): string {
         const date = year + "-" + String(month + 1).padStart(2, "0") + "-" + String(day).padStart(2, "0");
         const w = byDate[date];
         const future = date > today;
-        const cls = ["day", w ? "hit" : "off", w && w.estimated ? "est" : "", future ? "future" : "", date === today ? "today" : ""].join(" ");
+        const cls = ["day", w ? "hit" : "off", w && w.estimated ? "est" : "", w && w.partial ? "part" : "", future ? "future" : "", date === today ? "today" : ""].join(" ");
         const dur = w ? '<div class="dur">' + fmtDur(w.durationMs) + "</div>" : "";
         cal.insertAdjacentHTML("beforeend", '<div class="' + cls + '" data-date="' + date + '"><div>' + day + "</div>" + dur + "</div>");
       }
@@ -178,7 +193,7 @@ export function renderDashboard(index: IndexEntry[]): string {
           const w = byDate[el.dataset.date];
           if (!w) return;
           document.getElementById("detail").textContent =
-            w.date + " · " + fmtDur(w.durationMs) + " · " + w.exerciseCount + " exercises · " + w.setCount + " sets" + (w.isMakeup ? " · makeup" : "") + (w.estimated ? " · estimated" : "");
+            w.date + " · " + fmtDur(w.durationMs) + " · " + w.exerciseCount + " exercises · " + w.setCount + " sets" + (w.isMakeup ? " · makeup" : "") + (w.partial ? " · partial" : "") + (w.estimated ? " · estimated" : "");
         });
       });
     }

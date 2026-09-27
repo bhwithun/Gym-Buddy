@@ -1,4 +1,10 @@
-export function renderRoutineEditor(): string {
+import { escapeHtml } from "./http";
+
+export function renderRoutineEditor(options: {
+  apiBase: string;
+  calendarHref: string;
+  slug: string;
+}): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,7 +66,7 @@ export function renderRoutineEditor(): string {
 <body>
   <header>
     <h1>Routines</h1>
-    <p><a href="/">Gym time calendar</a></p>
+    <p><a href="${escapeHtml(options.calendarHref)}">Gym time calendar</a></p>
   </header>
   <div class="layout">
     <aside class="card versions">
@@ -84,8 +90,8 @@ export function renderRoutineEditor(): string {
   </div>
   <div class="gate" id="gate">
     <div class="box card">
-      <h2>Worker token</h2>
-      <p>Use the same token as About → Worker token.</p>
+      <h2>Profile token</h2>
+      <p>Paste the token from your connect page. It is the same value saved in the app.</p>
       <input id="tokenInput" type="text" placeholder="Token" style="width:100%;margin:12px 0;" />
       <button type="button" class="primary" id="tokenBtn">Continue</button>
       <p class="status err" id="tokenErr"></p>
@@ -104,7 +110,8 @@ export function renderRoutineEditor(): string {
   </div>
   <script>
     const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-    const TOKEN_KEY = "gb_token";
+    const API_BASE = ${JSON.stringify(options.apiBase)};
+    const TOKEN_KEY = ${JSON.stringify(`gb_token_${options.slug}`)};
     let token = sessionStorage.getItem(TOKEN_KEY) || "";
     let authRequired = false;
     let versions = [];
@@ -310,7 +317,7 @@ export function renderRoutineEditor(): string {
       if (missing) { setStatus("Every exercise needs a title.", "err"); return; }
       setStatus("Saving…");
       var method = (!asNew && currentId) ? "PUT" : "POST";
-      var path = (!asNew && currentId) ? "/routines/" + encodeURIComponent(currentId) : "/routines";
+      var path = (!asNew && currentId) ? API_BASE + "/routines/" + encodeURIComponent(currentId) : API_BASE + "/routines";
       api(path, { method: method, body: body }).then(function (rec) {
         return refreshList().then(function () {
           applyRecord(rec);
@@ -321,14 +328,14 @@ export function renderRoutineEditor(): string {
 
     function loadVersion(id) {
       setStatus("Loading…");
-      api("/routines/" + encodeURIComponent(id)).then(function (rec) {
+      api(API_BASE + "/routines/" + encodeURIComponent(id)).then(function (rec) {
         applyRecord(rec);
         setStatus("Loaded “" + rec.name + "”.");
       }).catch(function (err) { setStatus(err.message, "err"); });
     }
 
     function refreshList() {
-      return api("/routines").then(function (data) {
+      return api(API_BASE + "/routines").then(function (data) {
         versions = (data && data.routines) || [];
         renderVersions();
       });
@@ -340,7 +347,7 @@ export function renderRoutineEditor(): string {
     document.getElementById("deleteBtn").onclick = function () {
       if (!currentId) { setStatus("Nothing to delete.", "err"); return; }
       if (!confirm("Delete this named version?")) return;
-      api("/routines/" + encodeURIComponent(currentId), { method: "DELETE" }).then(function () {
+      api(API_BASE + "/routines/" + encodeURIComponent(currentId), { method: "DELETE" }).then(function () {
         return refreshList().then(function () {
           newRoutine();
           setStatus("Deleted.", "ok");
@@ -402,7 +409,7 @@ export function renderRoutineEditor(): string {
     };
 
     function boot() {
-      return api("/routines").then(function (data) {
+      return api(API_BASE + "/routines").then(function (data) {
         showGate(false);
         versions = (data && data.routines) || [];
         if (versions.length) return loadVersion(versions[0].id);

@@ -61,8 +61,9 @@ for (let offset = 0; offset < workouts.length; offset += batchSize) {
       const receivedAt = typeof record.receivedAt === "string" ? record.receivedAt : new Date().toISOString();
       return sql`
         INSERT INTO workouts (
-          date, payload, duration_ms, set_count, exercise_count, is_makeup, estimated, received_at
+          user_id, date, payload, duration_ms, set_count, exercise_count, is_makeup, estimated, partial, received_at
         ) VALUES (
+          'brian',
           ${date},
           ${JSON.stringify(record)}::jsonb,
           ${typeof record.durationMs === "number" ? record.durationMs : 0},
@@ -70,15 +71,17 @@ for (let offset = 0; offset < workouts.length; offset += batchSize) {
           ${typeof record.exerciseCount === "number" ? record.exerciseCount : 0},
           ${record.isMakeup === true},
           ${record.estimated === true},
+          ${record.partial === true},
           ${receivedAt}
         )
-        ON CONFLICT (date) DO UPDATE SET
+        ON CONFLICT (user_id, date) DO UPDATE SET
           payload = EXCLUDED.payload,
           duration_ms = EXCLUDED.duration_ms,
           set_count = EXCLUDED.set_count,
           exercise_count = EXCLUDED.exercise_count,
           is_makeup = EXCLUDED.is_makeup,
           estimated = EXCLUDED.estimated,
+          partial = EXCLUDED.partial,
           received_at = EXCLUDED.received_at
       `;
     }),
@@ -88,9 +91,10 @@ for (let offset = 0; offset < workouts.length; offset += batchSize) {
 
 for (const record of routines) {
   await sql`
-    INSERT INTO routines (id, name, updated_at, days)
+    INSERT INTO routines (id, user_id, name, updated_at, days)
     VALUES (
       ${record.id},
+      'brian',
       ${record.name},
       ${record.updatedAt},
       ${JSON.stringify(record.days)}::jsonb

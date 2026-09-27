@@ -7,7 +7,7 @@ export function GET(request: Request) {
     json({
       service: "gym-buddy",
       ok: true,
-      authRequired: Boolean(process.env.INGEST_TOKEN),
+      authRequired: true,
     }),
   );
 }

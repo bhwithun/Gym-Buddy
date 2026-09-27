@@ -1,4 +1,4 @@
-import { asIso, sql } from "./db";
+import { asIso, ready, sql } from "./db";
 import { json, readJsonBody } from "./http";
 
 export const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
@@ -37,9 +37,10 @@ export function isRoutineId(id: string): boolean {
   return ID_RE.test(id);
 }
 
-export async function listRoutines(): Promise<Response> {
+export async function listRoutines(userId: string): Promise<Response> {
+  await ready();
   const rows = await sql()`
-    SELECT id, name, updated_at FROM routines ORDER BY updated_at DESC
+    SELECT id, name, updated_at FROM routines WHERE user_id = ${userId} ORDER BY updated_at DESC
   `;
   const routines: RoutineIndexEntry[] = rows.map((row) => ({
     id: String(row.id),
@@ -49,9 +50,10 @@ export async function listRoutines(): Promise<Response> {
   return json({ routines });
 }
 
-export async function getRoutine(id: string): Promise<Response> {
+export async function getRoutine(userId: string, id: string): Promise<Response> {
+  await ready();
   const rows = await sql()`
-    SELECT id, name, updated_at, days FROM routines WHERE id = ${id}
+    SELECT id, name, updated_at, days FROM routines WHERE user_id = ${userId} AND id = ${id}
   `;
   const row = rows[0];
   if (!row) return json({ error: "not found" }, 404);
@@ -66,7 +68,8 @@ export async function getRoutine(id: string): Promise<Response> {
   return json(record);
 }
 
-export async function saveRoutine(request: Request, pathId: string | null): Promise<Response> {
+export async function saveRoutine(userId: string, request: Request, pathId: string | null): Promise<Response> {
+  await ready();
   const parsed = await readJsonBody(request);
   if (!parsed.ok) return parsed.response;
   if (!parsed.value || typeof parsed.value !== "object" || Array.isArray(parsed.value)) {
@@ -80,7 +83,7 @@ export async function saveRoutine(request: Request, pathId: string | null): Prom
   if (!name) return json({ error: "name is required" }, 400);
   if (name.length > 80) return json({ error: "name is too long" }, 400);
 
-  const index = await loadIndex();
+  const index = await loadIndex(userId);
   const overwriteByName = body.overwriteByName === true;
   let id = pathId;
   if (!id && typeof body.id === "string" && body.id) id = body.id;
@@ -91,6 +94,13 @@ export async function saveRoutine(request: Request, pathId: string | null): Prom
   if (id && !ID_RE.test(id)) return json({ error: "invalid routine id" }, 400);
   if (!id) id = makeId(name, new Set(index.map((entry) => entry.id)));
 
+  const owner = await sql()`SELECT user_id FROM routines WHERE id = ${id}`;
+  if (owner.length > 0 && String(owner[0].user_id) !== userId) {
+    const requested = Boolean(pathId || (typeof body.id === "string" && body.id));
+    if (requested) return json({ error: "invalid routine id" }, 409);
+    id = `${id.slice(0, 32)}-${crypto.randomUUID().slice(0, 8)}`;
+  }
+
   const replacing = index.some((entry) => entry.id === id);
   const record: RoutineRecord = {
     id,
@@ -99,26 +109,32 @@ export async function saveRoutine(request: Request, pathId: string | null): Prom
     days: daysResult.days,
   };
   await sql()`
-    INSERT INTO routines (id, name, updated_at, days)
-    VALUES (${record.id}, ${record.name}, ${record.updatedAt}, ${JSON.stringify(record.days)}::jsonb)
+    INSERT INTO routines (id, user_id, name, updated_at, days)
+    VALUES (${record.id}, ${userId}, ${record.name}, ${record.updatedAt}, ${JSON.stringify(record.days)}::jsonb)
     ON CONFLICT (id) DO UPDATE SET
       name = EXCLUDED.name,
       updated_at = EXCLUDED.updated_at,
       days = EXCLUDED.days
+    WHERE routines.user_id = ${userId}
   `;
   console.log(JSON.stringify({ message: "routine stored", id, name, replaced: replacing }));
   return json(record, replacing ? 200 : 201);
 }
 
-export async function deleteRoutine(id: string): Promise<Response> {
-  const rows = await sql()`DELETE FROM routines WHERE id = ${id} RETURNING id`;
+export async function deleteRoutine(userId: string, id: string): Promise<Response> {
+  await ready();
+  const rows = await sql()`
+    DELETE FROM routines WHERE user_id = ${userId} AND id = ${id} RETURNING id
+  `;
   if (rows.length === 0) return json({ error: "not found" }, 404);
   console.log(JSON.stringify({ message: "routine deleted", id }));
   return json({ ok: true, id });
 }
 
-async function loadIndex(): Promise<RoutineIndexEntry[]> {
-  const rows = await sql()`SELECT id, name, updated_at FROM routines`;
+async function loadIndex(userId: string): Promise<RoutineIndexEntry[]> {
+  const rows = await sql()`
+    SELECT id, name, updated_at FROM routines WHERE user_id = ${userId}
+  `;
   return rows.map((row) => ({
     id: String(row.id),
     name: String(row.name),
