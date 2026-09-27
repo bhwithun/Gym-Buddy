@@ -21,8 +21,9 @@ export function renderDashboard(index: IndexEntry[]): string {
     main { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
     h1 { color: #f9f72e; font-size: 28px; margin: 0 0 8px; }
     .sub { color: #9e9e9e; margin-bottom: 24px; }
-    .totals { display: grid; gap: 12px; grid-template-columns: 1fr; margin-bottom: 28px; }
+    .totals, .averages { display: grid; gap: 12px; grid-template-columns: 1fr; margin-bottom: 28px; }
     @media (min-width: 560px) { .totals { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 720px) { .averages { grid-template-columns: 1fr 1fr 1fr; } }
     .card { background: #1e1e1e; border: 1px solid #444; border-radius: 16px; padding: 16px 18px; }
     .label { color: #bdbdbd; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
     .value { font-size: 28px; color: #00ff88; margin-top: 6px; font-variant-numeric: tabular-nums; }
@@ -58,6 +59,23 @@ export function renderDashboard(index: IndexEntry[]): string {
         <div class="label">Year to date</div>
         <div class="value" id="ytdTime">—</div>
         <div class="meta" id="ytdMeta"></div>
+      </div>
+    </div>
+    <div class="averages">
+      <div class="card">
+        <div class="label">Last 10 workouts</div>
+        <div class="value" id="avg10">—</div>
+        <div class="meta" id="avg10Meta"></div>
+      </div>
+      <div class="card">
+        <div class="label">Last 30 workouts</div>
+        <div class="value" id="avg30">—</div>
+        <div class="meta" id="avg30Meta"></div>
+      </div>
+      <div class="card">
+        <div class="label">Last 100 workouts</div>
+        <div class="value" id="avg100">—</div>
+        <div class="meta" id="avg100Meta"></div>
       </div>
     </div>
     <div class="nav">
@@ -107,6 +125,36 @@ export function renderDashboard(index: IndexEntry[]): string {
       document.getElementById("ytdMeta").textContent = ytdWorkouts + " workout" + (ytdWorkouts === 1 ? "" : "s") + " · " + ytdSets + " sets in " + year;
     }
 
+    function fmtAvg(ms) {
+      const totalMin = Math.max(0, Math.round(ms / 60000));
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
+      if (h <= 0) return m + "m";
+      return h + "h " + String(m).padStart(2, "0") + "m";
+    }
+    function sessionAvg(list) {
+      if (!list.length) return { value: "0m", meta: "No sessions" };
+      let sum = 0, estimated = 0;
+      for (const w of list) {
+        sum += w.durationMs || 0;
+        if (w.estimated) estimated += 1;
+      }
+      let meta = "avg session · " + list.length + " workout" + (list.length === 1 ? "" : "s");
+      if (estimated) meta += " · " + estimated + " estimated";
+      return { value: fmtAvg(sum / list.length), meta: meta };
+    }
+    function setAvg(id, result) {
+      document.getElementById(id).textContent = result.value;
+      document.getElementById(id + "Meta").textContent = result.meta;
+    }
+    function averages() {
+      const today = ymd(new Date());
+      const past = workouts.filter((w) => w.date <= today);
+      setAvg("avg10", sessionAvg(past.slice(-10)));
+      setAvg("avg30", sessionAvg(past.slice(-30)));
+      setAvg("avg100", sessionAvg(past.slice(-100)));
+    }
+
     function render() {
       const year = view.getFullYear();
       const month = view.getMonth();
@@ -138,6 +186,7 @@ export function renderDashboard(index: IndexEntry[]): string {
     document.getElementById("prev").onclick = () => { view.setMonth(view.getMonth() - 1); render(); };
     document.getElementById("next").onclick = () => { view.setMonth(view.getMonth() + 1); render(); };
     totals();
+    averages();
     render();
   </script>
 </body>
