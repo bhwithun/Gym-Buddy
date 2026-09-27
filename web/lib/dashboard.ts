@@ -16,9 +16,14 @@ export type DashboardOptions = {
   slug: string;
   accessToken?: string;
   agentUrl: string;
+  /** full site, phone page with Log and Stats, or one panel chosen by the phone. */
+  embed?: "full" | "app" | "locked";
+  lockTab?: "log" | "stats";
 };
 
 export function renderDashboard(index: IndexEntry[], options: DashboardOptions): string {
+  const embed = options.embed ?? "full";
+  const bodyClass = embed === "locked" ? "app-embed locked" : embed === "app" ? "app-embed" : "";
   const routines = renderRoutineEditor({
     apiBase: `/u/${options.slug}`,
     calendarHref: `/u/${options.slug}`,
@@ -60,6 +65,10 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
       .side > button { flex: 1; text-align: center; border-left: 0; border-bottom: 3px solid transparent; }
       .side > button.active { border-bottom-color: #f9f72e; border-left-color: transparent; }
     }
+    body.app-embed .top, body.app-embed .agent, body.app-embed [data-tab="routines"] { display: none; }
+    body.app-embed .shell { min-height: 100vh; }
+    body.app-embed main { padding-top: 12px; }
+    body.locked .side { display: none; }
     .totals, .averages { display: grid; gap: 12px; grid-template-columns: 1fr; margin-bottom: 28px; }
     @media (min-width: 560px) { .totals { grid-template-columns: 1fr 1fr; } }
     @media (min-width: 720px) { .averages { grid-template-columns: 1fr 1fr 1fr; } }
@@ -93,7 +102,7 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     .agent .hint { flex-basis: 100%; margin: 0; color: #9e9e9e; font-size: 13px; }
   </style>
 </head>
-<body>
+<body class="${bodyClass}"${options.lockTab ? ` data-lock="${options.lockTab}"` : ""}>
   <header class="top">
     <a class="brand" href="/">
       <svg class="plate" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#5B2C6F" stroke="#f9f72e" stroke-width="2"/><circle cx="16" cy="16" r="5" fill="#121212"/></svg>
@@ -271,10 +280,12 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
       document.querySelectorAll("[data-panel]").forEach(function (panel) {
         panel.classList.toggle("active", panel.getAttribute("data-panel") === name);
       });
-      if (store) localStorage.setItem(tabKey, name);
+      if (store && !document.body.classList.contains("locked")) localStorage.setItem(tabKey, name);
+      if (document.body.classList.contains("locked")) return;
       var next = new URL(location.href);
       next.searchParams.delete("view");
       next.searchParams.set("tab", name);
+      if (document.body.classList.contains("app-embed")) next.searchParams.set("app", "1");
       history.replaceState(null, "", next);
     }
     var copyAgent = document.getElementById("copyAgent");
@@ -293,8 +304,9 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     });
     var params = new URL(location.href).searchParams;
     var fromView = params.get("view");
-    var initial = params.get("tab") || (fromView === "totals" || fromView === "averages" ? "stats" : fromView === "log" ? "log" : localStorage.getItem(tabKey) || "log");
-    showTab(initial, true);
+    var initial = document.body.getAttribute("data-lock") || params.get("tab") || (fromView === "totals" || fromView === "averages" ? "stats" : fromView === "log" ? "log" : localStorage.getItem(tabKey) || "log");
+    if (document.body.classList.contains("app-embed") && initial === "routines") initial = "log";
+    showTab(initial, !document.body.classList.contains("locked"));
   </script>
 </body>
 </html>`;

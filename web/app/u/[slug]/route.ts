@@ -15,6 +15,11 @@ export function GET(request: Request, context: Context) {
     const index = await loadWorkoutIndex(profile.id);
     const shareToken = await ensureShareToken(profile);
     const agentUrl = `${new URL(request.url).origin}/u/${profile.id}?token=${encodeURIComponent(shareToken)}`;
+    const requested = new URL(request.url).searchParams;
+    const view = requested.get("view");
+    const fromPhone = (request.headers.get("user-agent") ?? "").includes("; wv");
+    const phone = fromPhone || requested.get("app") === "1" || view === "log" || view === "totals" || view === "averages";
+    const locked = view === "log" || view === "totals" || view === "averages";
     const response = withProfileCookie(
       html(
         renderDashboard(index, {
@@ -22,6 +27,8 @@ export function GET(request: Request, context: Context) {
           slug: profile.id,
           accessToken: shareToken,
           agentUrl,
+          embed: locked ? "locked" : phone ? "app" : "full",
+          lockTab: view === "log" ? "log" : locked ? "stats" : undefined,
         }),
       ),
       request,

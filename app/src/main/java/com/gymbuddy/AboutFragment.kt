@@ -1,28 +1,65 @@
 package com.gymbuddy
 
-import android.content.Context
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
-import android.graphics.Bitmap
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.text.SpannableString
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.CookieManager
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.LinearLayout
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.gymbuddy.databinding.FragmentAboutBinding
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.WriterException
-import com.google.zxing.qrcode.QRCodeWriter
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 class AboutFragment : Fragment() {
 
     private var _binding: FragmentAboutBinding? = null
     private val binding get() = _binding!!
+    private var manualOpen = false
+    private var loadedStatsUrl: String? = null
+    private var nameRequest = 0
 
-    private var logoTapCount = 0
+    private val http = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .build()
+
+    private val scanLauncher = registerForActivityResult(ScanContract()) { result ->
+        val contents = result.contents ?: return@registerForActivityResult
+        val parsed = WorkerRemote.parseProfileQr(contents)
+        if (parsed == null) {
+            Toast.makeText(requireContext(), R.string.scan_profile_invalid, Toast.LENGTH_SHORT).show()
+            return@registerForActivityResult
+        }
+        saveProfile(parsed.first, parsed.second)
+    }
+
+    private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) startProfileScan()
+        else Toast.makeText(requireContext(), R.string.scan_camera_denied, Toast.LENGTH_SHORT).show()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -32,133 +69,236 @@ class AboutFragment : Fragment() {
         return binding.root
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        loadAboutInfo()
-
-        binding.logoImage.setOnClickListener {
-            logoTapCount++
-            if (logoTapCount >= 5) {
-                toggleEasterEgg()
-                logoTapCount = 0
-            }
-        }
-
-        binding.workerHelpLink.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.worker_help_url))))
-        }
-        binding.workerUrlInput.setText(WorkerRemote.getUrl(requireContext()) ?: "")
-        binding.workerTokenInput.setText(WorkerRemote.getToken(requireContext()) ?: "")
-        binding.workerStatsLink.setOnClickListener {
-            WorkerRemote.openDashboard(requireContext())
-        }
-        binding.workerRoutinesLink.setOnClickListener {
-            WorkerRemote.openRoutineEditor(requireContext())
-        }
-        refreshWorkerStatsLink()
-        binding.workerSaveButton.setOnClickListener {
-            val url = binding.workerUrlInput.text.toString()
-            val token = binding.workerTokenInput.text.toString()
-            WorkerRemote.save(requireContext(), url, token)
-            binding.workerUrlInput.setText(WorkerRemote.getUrl(requireContext()) ?: "")
-            refreshWorkerStatsLink()
-            val message = if (WorkerRemote.isConfigured(requireContext())) {
-                R.string.worker_saved
-            } else {
-                R.string.worker_cleared
-            }
-            android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
-            if (WorkerRemote.isConfigured(requireContext())) {
-                (activity as? MainActivity)?.let { StandardRoutineOffer.maybeCheck(it) }
-            }
-        }
-    }
-
-    private fun refreshWorkerStatsLink() {
-        val visible = if (WorkerRemote.isConfigured(requireContext())) View.VISIBLE else View.GONE
-        binding.workerStatsLink.visibility = visible
-        binding.workerRoutinesLink.visibility = visible
-    }
-
-    private fun loadAboutInfo() {
-        val prefs = requireContext().getSharedPreferences("gym_buddy_prefs", Context.MODE_PRIVATE)
-        val isEasterEggActive = prefs.getBoolean("easter_egg_active", false)
-
-        // Version
+        paintTitle()
         val packageInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
         binding.versionText.text = "Version ${packageInfo.versionName}"
+        binding.creditsText.text = coloredCredits(getString(R.string.about_credits))
 
-        if (isEasterEggActive) {
-            // Easter egg active
-            binding.logoImage.setImageResource(R.drawable.ut_logo)
+        binding.statsWeb.setBackgroundColor(Color.parseColor("#121212"))
+        binding.statsWeb.settings.javaScriptEnabled = true
+        binding.statsWeb.settings.domStorageEnabled = true
+        binding.statsWeb.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                return !isProfileHost(request.url)
+            }
 
-            // App name with colors
-            val appName = "Fit Bitch"
-            val spannableAppName = SpannableString(appName)
-            spannableAppName.setSpan(ForegroundColorSpan(Color.parseColor("#FFFF00")), 0, 3, 0) // Fit yellow
-            spannableAppName.setSpan(ForegroundColorSpan(Color.parseColor("#00FF00")), 4, appName.length, 0) // Bitch green
-            binding.appNameText.text = spannableAppName
+            override fun onPageFinished(view: WebView?, url: String?) {
+                if (_binding == null || !WorkerRemote.isConfigured(requireContext())) return
+                binding.statsStatus.visibility = View.GONE
+            }
 
-            // Credits with colors
-            val credits = "Made on Earth for Sam"
-            val spannableCredits = SpannableString(credits)
-            spannableCredits.setSpan(ForegroundColorSpan(Color.parseColor("#00FFFF")), 8, 13, 0) // Earth cyan
-            spannableCredits.setSpan(ForegroundColorSpan(Color.parseColor("#FF6B6B")), 17, credits.length, 0) // Sam red
-            binding.creditsText.text = spannableCredits
+            override fun onReceivedError(
+                view: WebView,
+                request: WebResourceRequest,
+                error: WebResourceError
+            ) {
+                if (!request.isForMainFrame || _binding == null) return
+                binding.statsStatus.visibility = View.VISIBLE
+                binding.statsStatus.setText(R.string.about_stats_failed)
+            }
+        }
 
-            // Generate insult QR code
-            val qrBitmap = generateQRCode("Fuck off, I'm lifting")
-            binding.qrCodeImage.setImageBitmap(qrBitmap)
-        } else {
-            // Normal state
-            binding.logoImage.setImageResource(R.drawable.plate)
+        binding.openSiteButton.setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.about_site_url))))
+        }
+        binding.scanProfileButton.setOnClickListener {
+            val granted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED
+            if (granted) startProfileScan() else cameraPermission.launch(Manifest.permission.CAMERA)
+        }
+        binding.manualToggle.setOnClickListener {
+            manualOpen = !manualOpen
+            renderConnection()
+        }
+        binding.workerSaveButton.setOnClickListener {
+            saveProfile(
+                binding.workerUrlInput.text.toString(),
+                binding.workerTokenInput.text.toString()
+            )
+        }
+        CookieManager.getInstance().setAcceptCookie(true)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(binding.statsWeb, true)
+        binding.workerUrlInput.setText(WorkerRemote.getUrl(requireContext()) ?: "")
+        binding.workerTokenInput.setText(WorkerRemote.getToken(requireContext()) ?: "")
+        renderConnection()
+    }
 
-            // App name with colors
-            val appName = "Gym Buddy"
-            val spannableAppName = SpannableString(appName)
-            spannableAppName.setSpan(ForegroundColorSpan(Color.parseColor("#FFFF00")), 0, 3, 0) // Gym yellow
-            spannableAppName.setSpan(ForegroundColorSpan(Color.parseColor("#00FF00")), 4, appName.length, 0) // Buddy green
-            binding.appNameText.text = spannableAppName
-
-            // Credits with colors
-            val credits = "Made on Earth by Brian"
-            val spannableCredits = SpannableString(credits)
-            spannableCredits.setSpan(ForegroundColorSpan(Color.parseColor("#00FFFF")), 8, 13, 0) // Earth cyan
-            spannableCredits.setSpan(ForegroundColorSpan(Color.parseColor("#FF6B6B")), 17, credits.length, 0) // Brian red
-            binding.creditsText.text = spannableCredits
-
-            // Normal QR code
-            binding.qrCodeImage.setImageResource(R.drawable.qr_code)
+    private fun saveProfile(url: String, token: String) {
+        WorkerRemote.save(requireContext(), url, token)
+        binding.workerUrlInput.setText(WorkerRemote.getUrl(requireContext()) ?: "")
+        binding.workerTokenInput.setText(WorkerRemote.getToken(requireContext()) ?: "")
+        val configured = WorkerRemote.isConfigured(requireContext())
+        if (configured) manualOpen = false
+        loadedStatsUrl = null
+        renderConnection()
+        Toast.makeText(
+            requireContext(),
+            if (configured) R.string.worker_saved else R.string.worker_cleared,
+            Toast.LENGTH_SHORT
+        ).show()
+        if (configured) {
+            (activity as? MainActivity)?.let { StandardRoutineOffer.maybeCheck(it) }
         }
     }
 
-    private fun toggleEasterEgg() {
-        val prefs = requireContext().getSharedPreferences("gym_buddy_prefs", Context.MODE_PRIVATE)
-        val isEasterEggActive = prefs.getBoolean("easter_egg_active", false)
-        prefs.edit().putBoolean("easter_egg_active", !isEasterEggActive).apply()
-        loadAboutInfo()
+    private fun renderConnection() {
+        if (_binding == null) return
+        val context = requireContext()
+        val url = WorkerRemote.getUrl(context)
+        val connected = !url.isNullOrBlank()
+        val scrollParams = binding.aboutScroll.layoutParams as LinearLayout.LayoutParams
+        val setupVisibility = if (connected) View.GONE else View.VISIBLE
+        binding.setupBody.visibility = setupVisibility
+        binding.openSiteButton.visibility = setupVisibility
+        binding.scanProfileButton.visibility = setupVisibility
+        binding.manualToggle.visibility = setupVisibility
+        binding.manualFields.visibility = if (!connected && manualOpen) View.VISIBLE else View.GONE
+        binding.manualToggle.setText(if (manualOpen) R.string.about_hide_manual else R.string.about_manual)
+        if (connected) {
+            showConnected(WorkerRemote.profileSlug(context) ?: url!!)
+            binding.statsWeb.visibility = View.VISIBLE
+            binding.statsStatus.visibility = View.VISIBLE
+            binding.statsStatus.setText(R.string.about_stats_loading)
+            scrollParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+            scrollParams.weight = 0f
+            loadDisplayName(url!!)
+            loadStats(url)
+        } else {
+            binding.profileStatus.movementMethod = null
+            binding.profileStatus.setText(R.string.about_not_connected)
+            binding.statsWeb.visibility = View.GONE
+            binding.statsStatus.visibility = View.GONE
+            scrollParams.height = 0
+            scrollParams.weight = 1f
+        }
+        binding.aboutScroll.layoutParams = scrollParams
     }
 
-    private fun generateQRCode(text: String): Bitmap? {
-        val writer = QRCodeWriter()
-        return try {
-            val bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, 512, 512)
-            val width = bitMatrix.width
-            val height = bitMatrix.height
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-            for (x in 0 until width) {
-                for (y in 0 until height) {
-                    bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+    private fun showConnected(name: String) {
+        val action = getString(R.string.about_disconnect_inline)
+        val line = getString(R.string.about_connected, name, action)
+        val start = line.lastIndexOf('(')
+        val text = SpannableString(line)
+        if (start >= 0) {
+            text.setSpan(object : ClickableSpan() {
+                override fun onClick(widget: View) {
+                    disconnectProfile()
+                }
+
+                override fun updateDrawState(ds: TextPaint) {
+                    ds.color = Color.parseColor("#00FFFF")
+                    ds.isUnderlineText = false
+                }
+            }, start, line.length, 0)
+        }
+        binding.profileStatus.text = text
+        binding.profileStatus.movementMethod = LinkMovementMethod.getInstance()
+        binding.profileStatus.highlightColor = Color.TRANSPARENT
+    }
+
+    private fun disconnectProfile() {
+        manualOpen = false
+        WorkerRemote.save(requireContext(), "", "")
+        loadedStatsUrl = null
+        binding.statsWeb.loadUrl("about:blank")
+        renderConnection()
+        Toast.makeText(requireContext(), R.string.worker_cleared, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun loadStats(url: String) {
+        val target = "$url/?app=1"
+        if (loadedStatsUrl == target) return
+        loadedStatsUrl = target
+        binding.statsStatus.visibility = View.VISIBLE
+        binding.statsStatus.setText(R.string.about_stats_loading)
+        val token = WorkerRemote.getToken(requireContext())
+        val slug = WorkerRemote.profileSlug(requireContext())
+        val origin = Uri.parse(url).let { parsed ->
+            val port = if (parsed.port == -1) "" else ":${parsed.port}"
+            "${parsed.scheme}://${parsed.host}$port"
+        }
+        if (!token.isNullOrBlank() && !slug.isNullOrBlank()) {
+            CookieManager.getInstance().setCookie(origin, "gb_profiles=$slug.$token; Path=/; Secure; SameSite=Lax") {
+                if (_binding != null && loadedStatsUrl == target) binding.statsWeb.loadUrl(target)
+            }
+            CookieManager.getInstance().flush()
+        } else {
+            binding.statsWeb.loadUrl(target)
+        }
+    }
+
+    private fun loadDisplayName(url: String) {
+        val requestId = ++nameRequest
+        val token = WorkerRemote.getToken(requireContext())
+        thread {
+            val name = try {
+                val request = Request.Builder().url(url).apply {
+                    if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
+                }
+                http.newCall(request.build()).execute().use { response ->
+                    val body = response.body?.string().orEmpty()
+                    Regex("""name="gb-profile" content="([^"]*)"""").find(body)?.groupValues?.get(1)?.trim()
+                }
+            } catch (_: Exception) {
+                null
+            }
+            activity?.runOnUiThread {
+                if (_binding == null || requestId != nameRequest) return@runOnUiThread
+                if (!name.isNullOrEmpty() && WorkerRemote.isConfigured(requireContext())) {
+                    showConnected(name)
                 }
             }
-            bitmap
-        } catch (e: WriterException) {
-            null
         }
+    }
+
+    private fun isProfileHost(uri: Uri): Boolean {
+        val base = WorkerRemote.getUrl(requireContext()) ?: return false
+        val host = Uri.parse(base).host ?: return false
+        return uri.scheme == "https" && uri.host == host
+    }
+
+    private fun startProfileScan() {
+        scanLauncher.launch(
+            ScanOptions().apply {
+                setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                setPrompt(getString(R.string.scan_profile))
+                setBeepEnabled(false)
+                setOrientationLocked(false)
+            }
+        )
+    }
+
+    private fun paintTitle() {
+        val appName = "Gym Buddy"
+        val title = SpannableString(appName)
+        title.setSpan(ForegroundColorSpan(Color.parseColor("#FFFF00")), 0, 3, 0)
+        title.setSpan(ForegroundColorSpan(Color.parseColor("#00FF00")), 4, appName.length, 0)
+        binding.appNameText.text = title
+    }
+
+    private fun coloredCredits(credits: String): SpannableString {
+        val text = SpannableString(credits)
+        val earth = credits.indexOf("Earth")
+        val brian = credits.indexOf("Brian")
+        if (earth >= 0) {
+            text.setSpan(ForegroundColorSpan(Color.parseColor("#00FFFF")), earth, earth + "Earth".length, 0)
+        }
+        if (brian >= 0) {
+            text.setSpan(ForegroundColorSpan(Color.parseColor("#FF6B6B")), brian, brian + "Brian".length, 0)
+        }
+        return text
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
+        binding.statsWeb.apply {
+            stopLoading()
+            webViewClient = WebViewClient()
+            destroy()
+        }
         _binding = null
+        super.onDestroyView()
     }
 }
