@@ -1,4 +1,5 @@
 import { escapeHtml } from "./http";
+import { renderRoutineEditor } from "./routine-editor";
 
 export type IndexEntry = {
   date: string;
@@ -10,21 +11,21 @@ export type IndexEntry = {
   partial?: boolean;
 };
 
-export type DashboardView = "all" | "log" | "totals" | "averages";
-
 export type DashboardOptions = {
   displayName: string;
-  routinePath: string;
-  view?: DashboardView;
+  slug: string;
+  accessToken?: string;
 };
 
 export function renderDashboard(index: IndexEntry[], options: DashboardOptions): string {
-  const routinePath = escapeHtml(options.routinePath);
-  const view = options.view ?? "all";
-  const compact = view !== "all";
-  const heading = compact
-    ? ""
-    : `<h1>Gym Buddy</h1><p class="who" style="color:#f9f72e;margin:0 0 16px;">${escapeHtml(options.displayName)} · <a href="${routinePath}">Edit routines</a></p>`;
+  const routines = renderRoutineEditor({
+    apiBase: `/u/${options.slug}`,
+    calendarHref: `/u/${options.slug}`,
+    slug: options.slug,
+    signedIn: true,
+    accessToken: options.accessToken,
+    embedded: true,
+  });
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,7 +38,7 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: #121212; color: #eee; }
-    main { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px 16px 48px; }
     h1 { color: #f9f72e; font-size: 28px; margin: 0 0 8px; }
     .sub { color: #9e9e9e; margin-bottom: 24px; }
     .totals, .averages { display: grid; gap: 12px; grid-template-columns: 1fr; margin-bottom: 28px; }
@@ -63,15 +64,22 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     .day.hit.est .dur { color: #7dcc9a; }
     .day.today { outline: 2px solid #f9f72e; }
     .detail { margin-top: 16px; min-height: 1.5em; color: #ddd; }
-    body[data-view="log"] .totals, body[data-view="log"] .averages { display: none; }
-    body[data-view="totals"] .averages, body[data-view="totals"] .log { display: none; }
-    body[data-view="averages"] .totals, body[data-view="averages"] .log { display: none; }
-    body.compact main { padding-top: 12px; }
+    .tabs { display: flex; gap: 8px; position: sticky; top: 0; z-index: 5; background: #121212; padding: 12px 0 14px; }
+    .tabs button { flex: 1; background: #1e1e1e; color: #f9f72e; border: 1px solid #444; border-radius: 10px; padding: 10px; cursor: pointer; font: inherit; font-size: 16px; }
+    .tabs button.active { background: #f9f72e; color: #121212; border-color: #f9f72e; }
+    [data-panel] { display: none; }
+    [data-panel].active { display: block; }
   </style>
 </head>
-<body data-view="${view}" class="${compact ? "compact" : ""}">
+<body>
   <main>
-    ${heading}
+    <h1>${escapeHtml(options.displayName)}</h1>
+    <nav class="tabs">
+      <button type="button" data-tab="log" class="active">Log</button>
+      <button type="button" data-tab="stats">Stats</button>
+      <button type="button" data-tab="routines">Routines</button>
+    </nav>
+    <section data-panel="stats">
     <div class="totals">
       <div class="card">
         <div class="label">Total gym time</div>
@@ -101,7 +109,8 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
         <div class="meta" id="avg100Meta"></div>
       </div>
     </div>
-    <div class="log">
+    </section>
+    <section data-panel="log" class="active">
     <div class="nav">
       <button type="button" id="prev">&lsaquo;</button>
       <h2 id="monthLabel"></h2>
@@ -109,7 +118,10 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     </div>
     <div class="cal" id="cal"></div>
     <div class="detail" id="detail">Tap a green day for that session.</div>
-    </div>
+    </section>
+    <section data-panel="routines">
+    ${routines}
+    </section>
   </main>
   <script>
     const workouts = ${JSON.stringify(index)};
@@ -213,6 +225,29 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     totals();
     averages();
     render();
+
+    const tabKey = ${JSON.stringify(`gb-user-tab:${options.slug}`)};
+    function showTab(name, store) {
+      if (name !== "log" && name !== "stats" && name !== "routines") name = "log";
+      document.querySelectorAll("[data-tab]").forEach(function (btn) {
+        btn.classList.toggle("active", btn.getAttribute("data-tab") === name);
+      });
+      document.querySelectorAll("[data-panel]").forEach(function (panel) {
+        panel.classList.toggle("active", panel.getAttribute("data-panel") === name);
+      });
+      if (store) localStorage.setItem(tabKey, name);
+      var next = new URL(location.href);
+      next.searchParams.delete("view");
+      next.searchParams.set("tab", name);
+      history.replaceState(null, "", next);
+    }
+    document.querySelectorAll("[data-tab]").forEach(function (btn) {
+      btn.addEventListener("click", function () { showTab(btn.getAttribute("data-tab"), true); });
+    });
+    var params = new URL(location.href).searchParams;
+    var fromView = params.get("view");
+    var initial = params.get("tab") || (fromView === "totals" || fromView === "averages" ? "stats" : fromView === "log" ? "log" : localStorage.getItem(tabKey) || "log");
+    showTab(initial, true);
   </script>
 </body>
 </html>`;

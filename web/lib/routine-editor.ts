@@ -6,23 +6,17 @@ export function renderRoutineEditor(options: {
   slug: string;
   signedIn?: boolean;
   accessToken?: string;
+  embedded?: boolean;
 }): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gym Buddy routines</title>
+  const embedded = options.embedded === true;
+  const body = `<div class="routine-root">
   <style>
-    :root { color-scheme: dark; }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: #121212; color: #eee; }
-    a { color: #00ffff; }
-    header { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 20px 20px 8px; max-width: 1200px; margin: 0 auto; }
-    h1 { color: #f9f72e; font-size: 28px; margin: 0; }
+    .routine-root { color: #eee; }
+    .routine-root a { color: #00ffff; }
+    .routine-root h1 { color: #f9f72e; font-size: 28px; margin: 0; }
     .layout { display: grid; grid-template-columns: 240px 1fr; gap: 16px; max-width: 1200px; margin: 0 auto; padding: 12px 20px 48px; }
     @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
-    .card { background: #1e1e1e; border: 1px solid #444; border-radius: 16px; padding: 14px; }
+    .routine-root .card { background: #1e1e1e; border: 1px solid #444; border-radius: 16px; padding: 14px; }
     .versions { display: flex; flex-direction: column; gap: 8px; }
     .versions button.new { background: #5B2C6F; color: #fff; border: 0; border-radius: 10px; padding: 10px; cursor: pointer; font-size: 14px; }
     .ver { text-align: left; background: #2a2a2a; color: #eee; border: 1px solid #444; border-radius: 10px; padding: 10px; cursor: pointer; }
@@ -30,8 +24,8 @@ export function renderRoutineEditor(options: {
     .ver .name { font-weight: 600; }
     .ver .meta { color: #9e9e9e; font-size: 12px; margin-top: 4px; }
     .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
-    input, select, textarea, button { font: inherit; }
-    input[type=text], input[type=number], textarea, select {
+    .routine-root input, .routine-root select, .routine-root textarea, .routine-root button { font: inherit; }
+    .routine-root input[type=text], .routine-root input[type=number], .routine-root textarea, .routine-root select {
       background: #121212; color: #eee; border: 1px solid #555; border-radius: 8px; padding: 8px 10px;
     }
     .name { flex: 1; min-width: 180px; }
@@ -64,12 +58,6 @@ export function renderRoutineEditor(options: {
     .modal .box { width: min(720px, 100%); max-height: 90vh; overflow: auto; }
     .modal textarea { min-height: 420px; font-family: ui-monospace, monospace; font-size: 13px; }
   </style>
-</head>
-<body>
-  <header>
-    <h1>Routines</h1>
-    <p><a href="${escapeHtml(options.calendarHref)}">Gym time calendar</a></p>
-  </header>
   <div class="layout">
     <aside class="card versions">
       <button type="button" class="new" id="newBtn">New routine</button>
@@ -437,6 +425,18 @@ export function renderRoutineEditor(options: {
     }).catch(function () { boot(); });
     }
   </script>
+</div>`;
+  if (embedded) return body;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="no-referrer" />
+  <title>Gym Buddy routines</title>
+</head>
+<body style="margin:0;background:#121212;font-family:ui-sans-serif,system-ui,sans-serif">
+${body}
 </body>
 </html>`;
 }

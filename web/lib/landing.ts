@@ -43,7 +43,7 @@ export function renderLanding(
         ? `<div class="card"><h2>Your profiles</h2>${profiles
             .map(
               (profile) =>
-                `<p><strong>${escapeHtml(profile.displayName)}</strong><br><a href="/u/${escapeHtml(profile.slug)}">Gym log</a> · <a href="/u/${escapeHtml(profile.slug)}/routine">Edit routines</a></p>`,
+                `<p><strong>${escapeHtml(profile.displayName)}</strong><br><a href="/u/${escapeHtml(profile.slug)}?tab=log">Log</a> · <a href="/u/${escapeHtml(profile.slug)}?tab=stats">Stats</a> · <a href="/u/${escapeHtml(profile.slug)}?tab=routines">Routines</a></p>`,
             )
             .join("")}</div>`
         : ""
