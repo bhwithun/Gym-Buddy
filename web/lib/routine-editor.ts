@@ -37,11 +37,21 @@ export function renderRoutineEditor(options: {
     .days button { background: #2a2a2a; color: #ddd; border: 1px solid #444; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
     .days button.active { background: #14331c; border-color: #00aa44; color: #e8ffe8; }
     .rest { color: #9e9e9e; font-style: italic; margin: 8px 0 12px; }
-    .ex { border: 1px solid #333; border-radius: 12px; padding: 10px; margin-bottom: 10px; background: #191919; }
-    .ex-top { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
-    @media (max-width: 700px) { .grid { grid-template-columns: 1fr 1fr; } }
+    .ex { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "head head head" "nums notes actions"; gap: 8px 10px; border: 1px solid #333; border-radius: 12px; padding: 10px; margin-bottom: 10px; background: #191919; align-items: stretch; }
+    .ex-head { grid-area: head; display: flex; gap: 8px; align-items: center; }
+    .ex-head input[type=text] { flex: 1; min-width: 0; }
+    .ex-head select { width: 110px; }
+    .ex-nums { grid-area: nums; display: flex; flex-direction: column; gap: 6px; width: 112px; }
+    .ex-notes { grid-area: notes; display: flex; }
+    .ex-notes textarea { width: 100%; height: 100%; min-height: 108px; margin: 0; resize: vertical; }
+    .ex-actions { grid-area: actions; display: flex; flex-direction: column; gap: 6px; }
+    .ex-actions button { padding: 8px; min-width: 40px; }
+    .ex-actions button.trash { color: #ff8a9a; display: inline-flex; align-items: center; justify-content: center; }
+    .ex-actions svg { display: block; }
     .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #bdbdbd; margin-bottom: 4px; }
+    .field.weight label, .field.weight input { color: #00FFFF; }
+    .field.reps label, .field.reps input { color: #F1C40F; }
+    .field.sets label, .field.sets input { color: #00FF00; }
     textarea { width: 100%; min-height: 64px; margin-top: 8px; resize: vertical; }
     .status { min-height: 1.4em; color: #9e9e9e; margin: 8px 0; }
     .status.err { color: #ff8a9a; }
@@ -177,42 +187,13 @@ export function renderRoutineEditor(options: {
       list.forEach(function (ex, idx) {
         var card = document.createElement("div");
         card.className = "ex";
-        var top = document.createElement("div");
-        top.className = "ex-top";
+        var head = document.createElement("div");
+        head.className = "ex-head";
         var title = document.createElement("input");
         title.type = "text";
         title.value = ex.title;
         title.placeholder = "Exercise name";
         title.addEventListener("input", function () { ex.title = title.value; });
-        var actions = document.createElement("div");
-        actions.className = "ex-actions";
-        function act(label, fn) {
-          var b = document.createElement("button");
-          b.type = "button";
-          b.textContent = label;
-          b.addEventListener("click", fn);
-          actions.appendChild(b);
-        }
-        act("Up", function () { if (idx === 0) return; list.splice(idx, 1); list.splice(idx - 1, 0, ex); renderDay(); });
-        act("Down", function () { if (idx >= list.length - 1) return; list.splice(idx, 1); list.splice(idx + 1, 0, ex); renderDay(); });
-        act("Remove", function () { list.splice(idx, 1); renderDay(); renderTabs(); });
-        top.appendChild(title);
-        top.appendChild(actions);
-        card.appendChild(top);
-
-        var grid = document.createElement("div");
-        grid.className = "grid";
-        function num(label, key) {
-          var inp = document.createElement("input");
-          inp.type = "number";
-          inp.min = "0";
-          inp.value = String(ex[key]);
-          inp.addEventListener("input", function () { ex[key] = Number(inp.value || 0); });
-          grid.appendChild(field(label, inp));
-        }
-        num("Weight", "weight");
-        num("Reps", "reps");
-        num("Sets", "sets");
         var rating = document.createElement("select");
         ["easy","good","hard"].forEach(function (r) {
           var o = document.createElement("option");
@@ -221,14 +202,57 @@ export function renderRoutineEditor(options: {
           rating.appendChild(o);
         });
         rating.addEventListener("change", function () { ex.easyGoodOrHard = rating.value; });
-        grid.appendChild(field("Rating", rating));
-        card.appendChild(grid);
+        head.appendChild(title);
+        head.appendChild(rating);
+        card.appendChild(head);
 
+        var nums = document.createElement("div");
+        nums.className = "ex-nums";
+        function num(label, key) {
+          var inp = document.createElement("input");
+          inp.type = "number";
+          inp.min = "0";
+          inp.value = String(ex[key]);
+          inp.addEventListener("input", function () { ex[key] = Number(inp.value || 0); });
+          var wrap = field(label, inp);
+          wrap.classList.add(key);
+          nums.appendChild(wrap);
+        }
+        num("Weight", "weight");
+        num("Reps", "reps");
+        num("Sets", "sets");
+        card.appendChild(nums);
+
+        var notesWrap = document.createElement("div");
+        notesWrap.className = "ex-notes";
         var notes = document.createElement("textarea");
         notes.placeholder = "Notes / cues";
         notes.value = ex.notes || "";
         notes.addEventListener("input", function () { ex.notes = notes.value; });
-        card.appendChild(notes);
+        notesWrap.appendChild(notes);
+        card.appendChild(notesWrap);
+
+        var actions = document.createElement("div");
+        actions.className = "ex-actions";
+        function act(label, fn, icon) {
+          var b = document.createElement("button");
+          b.type = "button";
+          if (icon) {
+            b.className = "trash";
+            b.setAttribute("aria-label", label);
+            b.title = label;
+            b.innerHTML = icon;
+          } else {
+            b.textContent = label;
+          }
+          b.addEventListener("click", fn);
+          actions.appendChild(b);
+        }
+        act("Up", function () { if (idx === 0) return; list.splice(idx, 1); list.splice(idx - 1, 0, ex); renderDay(); });
+        act("Down", function () { if (idx >= list.length - 1) return; list.splice(idx, 1); list.splice(idx + 1, 0, ex); renderDay(); });
+        act("Remove", function () { list.splice(idx, 1); renderDay(); renderTabs(); },
+          '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M9 3h6l1 2h5v2H3V5h5l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9z"/></svg>');
+        card.appendChild(actions);
         root.appendChild(card);
       });
     }
