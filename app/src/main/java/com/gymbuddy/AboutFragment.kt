@@ -77,6 +77,8 @@ class AboutFragment : Fragment() {
         binding.statsWeb.setBackgroundColor(Color.parseColor("#121212"))
         binding.statsWeb.settings.javaScriptEnabled = true
         binding.statsWeb.settings.domStorageEnabled = true
+        binding.statsWeb.settings.useWideViewPort = true
+        binding.statsWeb.settings.loadWithOverviewMode = true
         binding.statsWeb.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 return !isProfileHost(request.url)

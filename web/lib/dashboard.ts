@@ -66,8 +66,12 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
       .side > button.active { border-bottom-color: #f9f72e; border-left-color: transparent; }
     }
     body.app-embed .top, body.app-embed .agent, body.app-embed [data-tab="routines"] { display: none; }
-    body.app-embed .shell { min-height: 100vh; }
-    body.app-embed main { padding-top: 12px; }
+    body.app-embed .shell { flex-direction: column; min-height: 0; }
+    body.app-embed .side { position: static; top: auto; width: 100%; flex-direction: row; flex-wrap: wrap; align-self: stretch; border-right: 0; border-bottom: 1px solid #333; padding: 8px; }
+    body.app-embed .side > button { flex: 1; text-align: center; border-left: 0; border-bottom: 3px solid transparent; }
+    body.app-embed .side > button.active { border-bottom-color: #f9f72e; border-left-color: transparent; }
+    body.app-embed main { width: 100%; padding: 8px 0 20px; }
+    body.app-embed .nav, body.app-embed .detail, body.app-embed .stats-columns { padding-left: 8px; padding-right: 8px; }
     body.locked .side { display: none; }
     .stats-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
     .stats-columns h2 { margin: 0 0 12px; font-size: 18px; color: #f9f72e; }
