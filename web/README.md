@@ -5,8 +5,8 @@ The HTTP API the Android app uses, hosted as a Next.js app on Vercel. Each profi
 ## Onboarding
 
 1. Open the site home page. It introduces the app and links to the [latest GitHub release](https://github.com/bhwithun/Gym-Buddy/releases/latest) for the APK.
-2. Create a profile with your name and a profile address. The calendar is `https://gym.brianandkathi.com/u/your-name`. Anyone with that link can view it.
-3. The connect page shows a QR code and a token. In the app, open **About** and tap **Scan profile**. The phone saves the profile URL and token. You can also paste those two fields and tap **Save worker**.
+2. Create a profile with your name and a profile address. The calendar is `https://gym.brianandkathi.com/u/your-name`. It stays private to browsers that have opened the profile.
+3. The connect page shows a QR code. In the app, open **About** and tap **Scan profile**. The phone saves the profile. You can also paste the address and token and tap **Save profile**.
 4. Push gym time, backup, and restore then use that profile. On a computer, open the connect link once in that browser. After that, the home page lists the profile and **Edit routines** opens without a token.
 
 A separate share link, from `npm run share-link`, lets another tool read and edit that profile. It does not change the phone’s token. Re-running the script replaces the share link.
