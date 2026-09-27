@@ -75,6 +75,9 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     body.app-embed .cal { padding: 6px 10px 0; }
     .side > button.share-tab { display: none; }
     body.app-embed .side > button.share-tab { display: block; }
+    .share-screen { max-width: 420px; }
+    .share-screen p { line-height: 1.5; color: #ddd; }
+    .share-screen button { margin-top: 8px; display: inline-flex; align-items: center; gap: 8px; background: #5B2C6F; color: #fff; border: 0; border-radius: 10px; padding: 12px 16px; font: inherit; font-size: 16px; cursor: pointer; }
     body.locked .side { display: none; }
     .stats-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
     .stats-columns h2 { margin: 0 0 12px; font-size: 18px; color: #f9f72e; }
@@ -121,7 +124,7 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
   <aside class="side">
     <button type="button" data-tab="log" class="active">Log</button>
     <button type="button" data-tab="stats">Stats</button>
-    <button type="button" class="share-tab">Share</button>
+    <button type="button" class="share-tab" data-tab="share">Share</button>
     <button type="button" data-tab="routines">Routines</button>
     <div class="agent">
       <label for="agentLink">Agent link</label>
@@ -179,6 +182,15 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     <div class="cal" id="cal"></div>
     <div class="detail" id="detail">Tap a green day for that session.</div>
     </section>
+    <section data-panel="share">
+      <div class="share-screen">
+        <p>This link lets anyone who receives it view your gym log, stats, and routine. Share it with an AI agent, or send it to yourself to open your profile on a computer.</p>
+        <button type="button" id="startShare">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+          Share
+        </button>
+      </div>
+    </section>
     <section data-panel="routines">
     ${routines}
     </section>
@@ -215,23 +227,22 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
         }
       }
       const first = workouts[0]?.date;
-      document.getElementById("totalTime").textContent = workouts.length ? fmtDur(allMs) : "0m";
+      document.getElementById("totalTime").textContent = fmtHours(allMs);
       document.getElementById("totalSince").textContent = first
         ? workouts.length + " workout" + (workouts.length === 1 ? "" : "s") + " since " + first
         : "No workouts pushed yet";
-      document.getElementById("ytdTime").textContent = fmtDur(ytdMs);
+      document.getElementById("ytdTime").textContent = fmtHours(ytdMs);
       document.getElementById("ytdMeta").textContent = ytdWorkouts + " workout" + (ytdWorkouts === 1 ? "" : "s") + " · " + ytdSets + " sets in " + year;
     }
 
-    function fmtAvg(ms) {
-      const totalMin = Math.max(0, Math.round(ms / 60000));
-      const h = Math.floor(totalMin / 60);
-      const m = totalMin % 60;
-      if (h <= 0) return m + "m";
-      return h + "h " + String(m).padStart(2, "0") + "m";
+    function fmtHours(ms) {
+      return Math.floor(Math.max(0, ms) / 3600000) + "h";
+    }
+    function fmtMinutes(ms) {
+      return Math.max(0, Math.round(ms / 60000)) + " min";
     }
     function sessionAvg(list) {
-      if (!list.length) return { value: "0m", meta: "No sessions" };
+      if (!list.length) return { value: "0 min", meta: "No sessions" };
       let sum = 0, estimated = 0;
       for (const w of list) {
         sum += w.durationMs || 0;
@@ -239,7 +250,7 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
       }
       let meta = "avg session · " + list.length + " workout" + (list.length === 1 ? "" : "s");
       if (estimated) meta += " · " + estimated + " estimated";
-      return { value: fmtAvg(sum / list.length), meta: meta };
+      return { value: fmtMinutes(sum / list.length), meta: meta };
     }
     function setAvg(id, result) {
       document.getElementById(id).textContent = result.value;
@@ -289,7 +300,7 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
 
     const tabKey = ${JSON.stringify(`gb-user-tab:${options.slug}`)};
     function showTab(name, store) {
-      if (name !== "log" && name !== "stats" && name !== "routines") name = "log";
+      if (name !== "log" && name !== "stats" && name !== "routines" && name !== "share") name = "log";
       document.querySelectorAll("[data-tab]").forEach(function (btn) {
         btn.classList.toggle("active", btn.getAttribute("data-tab") === name);
       });
@@ -304,12 +315,12 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
       if (document.body.classList.contains("app-embed")) next.searchParams.set("app", "1");
       history.replaceState(null, "", next);
     }
-    var shareTab = document.querySelector(".share-tab");
-    if (shareTab) shareTab.addEventListener("click", function () {
+    var startShare = document.getElementById("startShare");
+    if (startShare) startShare.onclick = function () {
       var input = document.getElementById("agentLink");
       var value = input ? input.value : "";
       if (window.GymBuddy && window.GymBuddy.share) window.GymBuddy.share(value);
-    });
+    };
     var copyAgent = document.getElementById("copyAgent");
     if (copyAgent) copyAgent.onclick = function () {
       var input = document.getElementById("agentLink");
