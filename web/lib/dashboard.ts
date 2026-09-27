@@ -71,7 +71,10 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     body.app-embed .side > button { flex: 1; text-align: center; border-left: 0; border-bottom: 3px solid transparent; }
     body.app-embed .side > button.active { border-bottom-color: #f9f72e; border-left-color: transparent; }
     body.app-embed main { width: 100%; padding: 8px 0 20px; }
-    body.app-embed .nav, body.app-embed .detail, body.app-embed .stats-columns { padding-left: 8px; padding-right: 8px; }
+    body.app-embed .nav, body.app-embed .detail, body.app-embed .stats-columns { padding-left: 10px; padding-right: 10px; }
+    body.app-embed .cal { padding: 6px 10px 0; }
+    .side > button.share-tab { display: none; }
+    body.app-embed .side > button.share-tab { display: block; }
     body.locked .side { display: none; }
     .stats-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
     .stats-columns h2 { margin: 0 0 12px; font-size: 18px; color: #f9f72e; }
@@ -118,6 +121,7 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
   <aside class="side">
     <button type="button" data-tab="log" class="active">Log</button>
     <button type="button" data-tab="stats">Stats</button>
+    <button type="button" class="share-tab">Share</button>
     <button type="button" data-tab="routines">Routines</button>
     <div class="agent">
       <label for="agentLink">Agent link</label>
@@ -300,6 +304,12 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
       if (document.body.classList.contains("app-embed")) next.searchParams.set("app", "1");
       history.replaceState(null, "", next);
     }
+    var shareTab = document.querySelector(".share-tab");
+    if (shareTab) shareTab.addEventListener("click", function () {
+      var input = document.getElementById("agentLink");
+      var value = input ? input.value : "";
+      if (window.GymBuddy && window.GymBuddy.share) window.GymBuddy.share(value);
+    });
     var copyAgent = document.getElementById("copyAgent");
     if (copyAgent) copyAgent.onclick = function () {
       var input = document.getElementById("agentLink");

@@ -13,6 +13,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -29,6 +30,24 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
+
+private class ProfileShareBridge(private val fragment: AboutFragment) {
+    @JavascriptInterface
+    fun share(url: String) {
+        val parsed = Uri.parse(url.trim())
+        val host = parsed.host ?: return
+        if (!parsed.scheme.equals("https", ignoreCase = true)) return
+        if (host != "gym.brianandkathi.com" && !host.endsWith(".brianandkathi.com")) return
+        fragment.activity?.runOnUiThread {
+            if (!fragment.isAdded) return@runOnUiThread
+            val send = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, parsed.toString())
+            }
+            fragment.startActivity(Intent.createChooser(send, fragment.getString(R.string.about_share)))
+        }
+    }
+}
 
 class AboutFragment : Fragment() {
 
@@ -79,6 +98,7 @@ class AboutFragment : Fragment() {
         binding.statsWeb.settings.domStorageEnabled = true
         binding.statsWeb.settings.useWideViewPort = true
         binding.statsWeb.settings.loadWithOverviewMode = true
+        binding.statsWeb.addJavascriptInterface(ProfileShareBridge(this), "GymBuddy")
         binding.statsWeb.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 return !isProfileHost(request.url)

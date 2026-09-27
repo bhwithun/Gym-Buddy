@@ -52,6 +52,7 @@
     <string name="about_manual">Enter the address manually</string>
     <string name="about_hide_manual">Hide manual entry</string>
     <string name="about_disconnect">Disconnect</string>
+    <string name="about_share">Share profile</string>
     <string name="about_tab_log">Log</string>
     <string name="about_tab_totals">Totals</string>
     <string name="about_tab_averages">Averages</string>

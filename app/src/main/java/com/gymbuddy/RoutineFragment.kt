@@ -38,25 +38,8 @@ class RoutineFragment : Fragment() {
             binding.recyclerView.adapter = adapter
         }
 
-        refreshEditorLink()
-
         binding.backupButton.setOnClickListener { confirmBackup(dao) }
         binding.restoreButton.setOnClickListener { confirmRestore() }
-        binding.editOnPcLink.setOnClickListener {
-            if (!WorkerRemote.openRoutineEditor(requireContext())) {
-                toast(R.string.routine_worker_missing)
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        refreshEditorLink()
-    }
-
-    private fun refreshEditorLink() {
-        binding.editOnPcLink.visibility =
-            if (WorkerRemote.isConfigured(requireContext())) View.VISIBLE else View.GONE
     }
 
     private fun confirmBackup(dao: RoutineDao) {
