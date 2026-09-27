@@ -15,6 +15,7 @@ export type DashboardOptions = {
   displayName: string;
   slug: string;
   accessToken?: string;
+  agentUrl: string;
 };
 
 export function renderDashboard(index: IndexEntry[], options: DashboardOptions): string {
@@ -69,11 +70,22 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     .tabs button.active { background: #f9f72e; color: #121212; border-color: #f9f72e; }
     [data-panel] { display: none; }
     [data-panel].active { display: block; }
+    .agent { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 4px; }
+    .agent label { color: #bdbdbd; font-size: 13px; }
+    .agent input { flex: 1; min-width: 200px; background: #121212; color: #eee; border: 1px solid #555; border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13px; }
+    .agent button { background: #2a2a2a; color: #f9f72e; border: 1px solid #555; border-radius: 10px; padding: 8px 12px; cursor: pointer; font: inherit; }
+    .agent .hint { flex-basis: 100%; margin: 0; color: #9e9e9e; font-size: 13px; }
   </style>
 </head>
 <body>
   <main>
     <h1>${escapeHtml(options.displayName)}</h1>
+    <div class="agent">
+      <label for="agentLink">Agent link</label>
+      <input id="agentLink" readonly value="${escapeHtml(options.agentUrl)}" />
+      <button type="button" id="copyAgent">Copy</button>
+      <p class="hint">Give this link to an agent. It can see and edit this profile. Anyone with the link can do the same.</p>
+    </div>
     <nav class="tabs">
       <button type="button" data-tab="log" class="active">Log</button>
       <button type="button" data-tab="stats">Stats</button>
@@ -241,6 +253,17 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
       next.searchParams.set("tab", name);
       history.replaceState(null, "", next);
     }
+    var copyAgent = document.getElementById("copyAgent");
+    if (copyAgent) copyAgent.onclick = function () {
+      var input = document.getElementById("agentLink");
+      var value = input ? input.value : "";
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(value).then(function () { copyAgent.textContent = "Copied"; });
+      } else if (input) {
+        input.focus();
+        input.select();
+      }
+    };
     document.querySelectorAll("[data-tab]").forEach(function (btn) {
       btn.addEventListener("click", function () { showTab(btn.getAttribute("data-tab"), true); });
     });

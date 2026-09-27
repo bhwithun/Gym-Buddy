@@ -44,7 +44,7 @@ await ensureSchema(sql);
 const token = randomBytes(32).toString("base64url");
 const tokenHash = createHash("sha256").update(token).digest("hex");
 const rows = await sql`
-  UPDATE users SET share_token_hash = ${tokenHash} WHERE id = 'brian' RETURNING id
+  UPDATE users SET share_token = ${token}, share_token_hash = ${tokenHash} WHERE id = 'brian' RETURNING id
 `;
 if (rows.length === 0) {
   console.error("No brian profile yet. Run npm run claim-owner first.");

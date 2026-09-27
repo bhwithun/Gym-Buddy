@@ -1,6 +1,6 @@
 import { renderDashboard } from "../../../lib/dashboard";
 import { html, json, run } from "../../../lib/http";
-import { acceptsToken, openProfile, queryToken, renderPrivate, withProfileCookie } from "../../../lib/users";
+import { ensureShareToken, openProfile, renderPrivate, withProfileCookie } from "../../../lib/users";
 import { loadWorkoutIndex } from "../../../lib/workouts";
 
 export const dynamic = "force-dynamic";
@@ -13,18 +13,21 @@ export function GET(request: Request, context: Context) {
     const profile = await openProfile(request, decodeURIComponent(slug));
     if (!profile) return html(renderPrivate());
     const index = await loadWorkoutIndex(profile.id);
-    const token = queryToken(request);
-    const accessToken = token && acceptsToken(token, profile) ? token : "";
-    let response = html(
-      renderDashboard(index, {
-        displayName: profile.displayName,
-        slug: profile.id,
-        accessToken,
-      }),
+    const shareToken = await ensureShareToken(profile);
+    const agentUrl = `${new URL(request.url).origin}/u/${profile.id}?token=${encodeURIComponent(shareToken)}`;
+    const response = withProfileCookie(
+      html(
+        renderDashboard(index, {
+          displayName: profile.displayName,
+          slug: profile.id,
+          accessToken: shareToken,
+          agentUrl,
+        }),
+      ),
+      request,
+      profile.id,
+      shareToken,
     );
-    if (accessToken) {
-      response = withProfileCookie(response, request, profile.id, accessToken);
-    }
     return response;
   });
 }

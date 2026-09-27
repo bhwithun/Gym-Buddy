@@ -25,6 +25,7 @@ async function migrate(sql: Sql): Promise<void> {
     )
   `;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS share_token_hash text`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS share_token text`;
   await sql`
     CREATE TABLE IF NOT EXISTS workouts (
       user_id text NOT NULL,

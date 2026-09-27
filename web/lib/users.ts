@@ -9,6 +9,7 @@ export type Profile = {
   displayName: string;
   tokenHash: string;
   shareTokenHash: string | null;
+  shareToken: string | null;
 };
 
 export function newToken(): string {
@@ -122,7 +123,7 @@ export async function getProfile(slug: string): Promise<Profile | null> {
   await ready();
   if (!SLUG_RE.test(slug)) return null;
   const rows = await sql()`
-    SELECT id, display_name, token_hash, share_token_hash FROM users WHERE id = ${slug}
+    SELECT id, display_name, token_hash, share_token_hash, share_token FROM users WHERE id = ${slug}
   `;
   const row = rows[0];
   if (!row) return null;
@@ -131,7 +132,20 @@ export async function getProfile(slug: string): Promise<Profile | null> {
     displayName: String(row.display_name),
     tokenHash: String(row.token_hash),
     shareTokenHash: row.share_token_hash ? String(row.share_token_hash) : null,
+    shareToken: row.share_token ? String(row.share_token) : null,
   };
+}
+
+export async function ensureShareToken(profile: Profile): Promise<string> {
+  if (profile.shareToken) return profile.shareToken;
+  const token = newToken();
+  const hash = hashToken(token);
+  await sql()`
+    UPDATE users SET share_token = ${token}, share_token_hash = ${hash} WHERE id = ${profile.id}
+  `;
+  profile.shareToken = token;
+  profile.shareTokenHash = hash;
+  return token;
 }
 
 export async function requireProfile(
