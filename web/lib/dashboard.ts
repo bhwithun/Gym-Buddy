@@ -39,9 +39,27 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: #121212; color: #eee; }
-    main { max-width: 1100px; margin: 0 auto; padding: 16px 16px 48px; }
+    a { color: #00ffff; }
+    .top { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 18px; background: #1a1024; border-bottom: 3px solid #5B2C6F; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+    .plate { width: 36px; height: 36px; display: block; }
+    .word { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+    .word .gym { color: #f9f72e; }
+    .word .buddy { color: #00ff00; }
+    .who { color: #00ffff; font-weight: 600; font-size: 16px; }
+    .shell { display: flex; align-items: flex-start; min-height: calc(100vh - 59px); }
+    .side { position: sticky; top: 59px; width: 240px; flex: none; align-self: stretch; display: flex; flex-direction: column; gap: 6px; padding: 16px 12px; background: #1a1a1a; border-right: 1px solid #333; }
+    .side > button { text-align: left; background: transparent; color: #ddd; border: 0; border-left: 3px solid transparent; border-radius: 8px; padding: 10px 12px; cursor: pointer; font: inherit; font-size: 16px; }
+    .side > button.active { background: #2a2210; color: #f9f72e; border-left-color: #f9f72e; }
+    main { flex: 1; min-width: 0; margin: 0; max-width: none; padding: 20px 24px 48px; }
     h1 { color: #f9f72e; font-size: 28px; margin: 0 0 8px; }
     .sub { color: #9e9e9e; margin-bottom: 24px; }
+    @media (max-width: 800px) {
+      .shell { flex-direction: column; }
+      .side { position: sticky; top: 56px; width: auto; flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid #333; padding: 8px; z-index: 5; }
+      .side > button { flex: 1; text-align: center; border-left: 0; border-bottom: 3px solid transparent; }
+      .side > button.active { border-bottom-color: #f9f72e; border-left-color: transparent; }
+    }
     .totals, .averages { display: grid; gap: 12px; grid-template-columns: 1fr; margin-bottom: 28px; }
     @media (min-width: 560px) { .totals { grid-template-columns: 1fr 1fr; } }
     @media (min-width: 720px) { .averages { grid-template-columns: 1fr 1fr 1fr; } }
@@ -65,12 +83,10 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     .day.hit.est .dur { color: #7dcc9a; }
     .day.today { outline: 2px solid #f9f72e; }
     .detail { margin-top: 16px; min-height: 1.5em; color: #ddd; }
-    .tabs { display: flex; gap: 8px; position: sticky; top: 0; z-index: 5; background: #121212; padding: 12px 0 14px; }
-    .tabs button { flex: 1; background: #1e1e1e; color: #f9f72e; border: 1px solid #444; border-radius: 10px; padding: 10px; cursor: pointer; font: inherit; font-size: 16px; }
-    .tabs button.active { background: #f9f72e; color: #121212; border-color: #f9f72e; }
     [data-panel] { display: none; }
     [data-panel].active { display: block; }
-    .agent { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 4px; }
+    .agent { display: flex; flex-direction: column; align-items: stretch; gap: 8px; margin-top: 18px; }
+    .side .agent input { min-width: 0; width: 100%; }
     .agent label { color: #bdbdbd; font-size: 13px; }
     .agent input { flex: 1; min-width: 200px; background: #121212; color: #eee; border: 1px solid #555; border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13px; }
     .agent button { background: #2a2a2a; color: #f9f72e; border: 1px solid #555; border-radius: 10px; padding: 8px 12px; cursor: pointer; font: inherit; }
@@ -78,19 +94,26 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
   </style>
 </head>
 <body>
-  <main>
-    <h1>${escapeHtml(options.displayName)}</h1>
+  <header class="top">
+    <a class="brand" href="/">
+      <svg class="plate" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#5B2C6F" stroke="#f9f72e" stroke-width="2"/><circle cx="16" cy="16" r="5" fill="#121212"/></svg>
+      <span class="word"><span class="gym">Gym</span> <span class="buddy">Buddy</span></span>
+    </a>
+    <span class="who">${escapeHtml(options.displayName)}</span>
+  </header>
+  <div class="shell">
+  <aside class="side">
+    <button type="button" data-tab="log" class="active">Log</button>
+    <button type="button" data-tab="stats">Stats</button>
+    <button type="button" data-tab="routines">Routines</button>
     <div class="agent">
       <label for="agentLink">Agent link</label>
       <input id="agentLink" readonly value="${escapeHtml(options.agentUrl)}" />
       <button type="button" id="copyAgent">Copy</button>
-      <p class="hint">Give this link to an agent. It can see and edit this profile. Anyone with the link can do the same.</p>
+      <p class="hint">This link lets an agent see and edit this profile.</p>
     </div>
-    <nav class="tabs">
-      <button type="button" data-tab="log" class="active">Log</button>
-      <button type="button" data-tab="stats">Stats</button>
-      <button type="button" data-tab="routines">Routines</button>
-    </nav>
+  </aside>
+  <main>
     <section data-panel="stats">
     <div class="totals">
       <div class="card">
@@ -135,6 +158,7 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
     ${routines}
     </section>
   </main>
+  </div>
   <script>
     const workouts = ${JSON.stringify(index)};
     const byDate = Object.fromEntries(workouts.map(w => [w.date, w]));
