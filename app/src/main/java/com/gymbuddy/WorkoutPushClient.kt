@@ -36,6 +36,7 @@ object WorkoutPushClient {
         val durationMs: Long,
         val exerciseCount: Int,
         val setCount: Int,
+        val partial: Boolean,
         val exercises: List<ExerciseSnapshot>
     )
 
@@ -50,6 +51,7 @@ object WorkoutPushClient {
             durationMs = summary.durationMs,
             exerciseCount = summary.exerciseCount,
             setCount = summary.setCount,
+            partial = workout.exercises.any { it.sets > 0 && it.completedSets < it.sets },
             exercises = workout.exercises.map { exercise ->
                 ExerciseSnapshot(
                     title = exercise.title,

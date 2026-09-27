@@ -35,12 +35,14 @@ class WorkoutFragment : Fragment() {
     private var isMakeup = false
     private var currentSwelledPosition = -1
     private var loadToken = 0
+    private var seenGeneration = -1
     private val reloadFromWidget = Runnable {
         if (isAdded && _binding != null) {
             loadWorkout(preservePage = true)
         }
     }
     private val onExternalWorkoutChange: () -> Unit = {
+        seenGeneration = WorkoutSync.generation()
         view?.removeCallbacks(reloadFromWidget)
         view?.postDelayed(reloadFromWidget, 250)
     }
@@ -114,7 +116,36 @@ class WorkoutFragment : Fragment() {
                 showMakeupDayDialog()
             }
         }
+        binding.endWorkoutLink.setOnClickListener { confirmEndWorkout() }
         loadWorkout()
+    }
+
+    private fun confirmEndWorkout() {
+        if (!isAdded || exercises.isEmpty()) return
+        val unfinished = exercises.any { it.sets > 0 && it.completedSets < it.sets }
+        if (!unfinished) {
+            openEndSummary()
+            return
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.end_workout_title)
+            .setMessage(R.string.end_workout_message)
+            .setPositiveButton(R.string.end_workout) { _, _ -> openEndSummary() }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun openEndSummary() {
+        if (!isAdded) return
+        val summary = WorkoutClock.endNow(requireContext(), exercises) ?: return
+        WorkoutClock.launchSummary(requireContext(), summary, undoOnCancel = false)
+    }
+
+    private fun refreshEndWorkoutLink() {
+        if (_binding == null) return
+        val allDone = exercises.isNotEmpty() && exercises.all { it.sets <= 0 || it.completedSets >= it.sets }
+        val show = exercises.isNotEmpty() && (!allDone || !WorkoutClock.autoSummaryEnabled(requireContext()))
+        binding.endWorkoutLink.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     private fun applyHeader() {
@@ -130,6 +161,11 @@ class WorkoutFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         WorkoutSync.addListener(onExternalWorkoutChange)
+        val generation = WorkoutSync.generation()
+        if (seenGeneration != -1 && generation != seenGeneration) {
+            loadWorkout(preservePage = true)
+        }
+        seenGeneration = generation
     }
 
     override fun onStop() {
@@ -154,6 +190,8 @@ class WorkoutFragment : Fragment() {
             applyHeader()
 
             if (workout.isRest) {
+                exercises.clear()
+                refreshEndWorkoutLink()
                 Toast.makeText(requireContext(), "Rest Day!", Toast.LENGTH_SHORT).show()
                 binding.viewPager.adapter = null
             } else if (workout.hasRoutine) {
@@ -188,6 +226,7 @@ class WorkoutFragment : Fragment() {
                          }
                          WorkoutClock.presentIfNeeded(requireActivity(), exercises, event)
                      }
+                     refreshEndWorkoutLink()
                  })
 
                 binding.viewPager.adapter = adapter
@@ -247,7 +286,10 @@ class WorkoutFragment : Fragment() {
                 }
 
                 WorkoutClock.presentIfNeeded(requireActivity(), exercises, WorkoutClock.Event.LOAD)
+                refreshEndWorkoutLink()
             } else {
+                exercises.clear()
+                refreshEndWorkoutLink()
                 Toast.makeText(requireContext(), "No routine for today", Toast.LENGTH_SHORT).show()
                 binding.viewPager.adapter = null
             }

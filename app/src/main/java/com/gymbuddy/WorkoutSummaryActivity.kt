@@ -22,7 +22,7 @@ class WorkoutSummaryActivity : AppCompatActivity(), DurationEditorDialogFragment
         setContentView(binding.root)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                close()
+                cancelSummary()
             }
         })
 
@@ -78,6 +78,7 @@ class WorkoutSummaryActivity : AppCompatActivity(), DurationEditorDialogFragment
             binding.statsLink.visibility = View.GONE
         }
         binding.doneButton.setOnClickListener { close() }
+        binding.cancelButton.setOnClickListener { cancelSummary() }
     }
 
     private fun openDurationEditor() {
@@ -145,5 +146,26 @@ class WorkoutSummaryActivity : AppCompatActivity(), DurationEditorDialogFragment
     private fun close() {
         WorkoutClock.markPresented(this)
         finish()
+    }
+
+    private fun cancelSummary() {
+        val undo = intent.getBooleanExtra(WorkoutClock.EXTRA_UNDO_ON_CANCEL, false)
+        thread {
+            if (undo) {
+                try {
+                    WorkoutRepository.undoLastCompletedSet(this)
+                } catch (_: Exception) {
+                }
+            }
+            WorkoutClock.abandonSummary(this)
+            WorkoutSync.notifyWorkoutChanged()
+            try {
+                ExerciseWidgetProvider.refreshAll(this)
+            } catch (_: Exception) {
+            }
+            runOnUiThread {
+                if (!isFinishing) finish()
+            }
+        }
     }
 }

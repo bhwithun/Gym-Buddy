@@ -122,6 +122,24 @@ object WorkoutRepository {
         saveTodayExercises(context, fresh)
     }
 
+    /** Drops one completed set on the last finished exercise. Returns that exercise index. */
+    fun undoLastCompletedSet(context: Context): Int? {
+        val today = loadOrCreateToday(context)
+        if (today.exercises.isEmpty()) return null
+        val exercises = today.exercises.toMutableList()
+        val index = exercises.indexOfLast { it.sets > 0 && it.completedSets >= it.sets }
+        if (index < 0) return null
+        val exercise = exercises[index]
+        exercises[index] = exercise.copy(
+            completedSets = (exercise.completedSets - 1).coerceAtLeast(0),
+            isTimerActive = false,
+            remainingSeconds = 0,
+            timerEndTime = 0
+        )
+        saveTodayExercises(context, exercises)
+        return index
+    }
+
     fun saveTodayExercises(context: Context, exercises: List<Exercise>) {
         val dateStr = todayDateString()
         val plannedJson = gson.toJson(exercises.map { it.copy(completedSets = 0) })

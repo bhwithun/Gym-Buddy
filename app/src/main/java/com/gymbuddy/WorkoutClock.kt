@@ -16,12 +16,14 @@ object WorkoutClock {
     private const val KEY_START = "start_ms"
     private const val KEY_END = "end_ms"
     private const val KEY_SHOWN = "summary_shown"
+    private const val KEY_AUTO = "auto_summary"
     private const val SUMMARY_REQUEST = 7101
 
     const val EXTRA_START_MS = "summary_start_ms"
     const val EXTRA_END_MS = "summary_end_ms"
     const val EXTRA_EXERCISE_COUNT = "summary_exercise_count"
     const val EXTRA_SET_COUNT = "summary_set_count"
+    const val EXTRA_UNDO_ON_CANCEL = "summary_undo_on_cancel"
 
     enum class Event { SET_COMPLETE, SET_UNDONE, LOAD }
 
@@ -100,8 +102,47 @@ object WorkoutClock {
         prefs(context).edit().clear().commit()
     }
 
+    fun autoSummaryEnabled(context: Context): Boolean {
+        val prefs = prefs(context)
+        rollDate(prefs)
+        return prefs.getBoolean(KEY_AUTO, true)
+    }
+
+    /**
+     * Opens the gym-time summary without waiting for every set.
+     * Keeps a finish time already recorded by the last completed set.
+     */
+    fun endNow(context: Context, exercises: List<Exercise>): Summary? {
+        if (exercises.isEmpty()) return null
+        val prefs = prefs(context)
+        rollDate(prefs)
+        val now = System.currentTimeMillis()
+        val existingStart = prefs.getLong(KEY_START, 0L)
+        val start = if (existingStart == 0L) now else existingStart
+        val existingEnd = prefs.getLong(KEY_END, 0L)
+        val end = if (existingEnd > start) existingEnd else now
+        prefs.edit().putLong(KEY_START, start).putLong(KEY_END, end).commit()
+        return Summary(
+            startMs = start,
+            endMs = end,
+            durationMs = max(0L, end - start),
+            exerciseCount = exercises.size,
+            setCount = exercises.sumOf { it.completedSets.coerceAtLeast(0) }
+        )
+    }
+
+    /** Leave the summary without ending the day. Later set completions stay in the workout. */
+    fun abandonSummary(context: Context) {
+        prefs(context).edit()
+            .putLong(KEY_END, 0L)
+            .putBoolean(KEY_SHOWN, false)
+            .putBoolean(KEY_AUTO, false)
+            .commit()
+    }
+
     fun presentIfNeeded(context: Context, exercises: List<Exercise>, event: Event) {
         if (!sync(context, exercises, event)) return
+        if (!autoSummaryEnabled(context)) return
         val summary = summary(context, exercises) ?: run {
             val prefs = prefs(context)
             val start = prefs.getLong(KEY_START, 0L)
@@ -109,15 +150,16 @@ object WorkoutClock {
             if (start == 0L || end == 0L) return
             Summary(start, end, max(0L, end - start), exercises.size, exercises.sumOf { it.completedSets })
         }
-        launchSummary(context, summary)
+        launchSummary(context, summary, undoOnCancel = true)
     }
 
-    fun launchSummary(context: Context, summary: Summary) {
+    fun launchSummary(context: Context, summary: Summary, undoOnCancel: Boolean = false) {
         val intent = Intent(context, WorkoutSummaryActivity::class.java).apply {
             putExtra(EXTRA_START_MS, summary.startMs)
             putExtra(EXTRA_END_MS, summary.endMs)
             putExtra(EXTRA_EXERCISE_COUNT, summary.exerciseCount)
             putExtra(EXTRA_SET_COUNT, summary.setCount)
+            putExtra(EXTRA_UNDO_ON_CANCEL, undoOnCancel)
         }
         try {
             if (context is Activity) {

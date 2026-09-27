@@ -1,9 +1,13 @@
 package com.gymbuddy
 
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 
 object WorkoutSync {
     private val listeners = CopyOnWriteArrayList<() -> Unit>()
+    private val changes = AtomicInteger(0)
+
+    fun generation(): Int = changes.get()
 
     fun addListener(listener: () -> Unit) {
         listeners.add(listener)
@@ -14,6 +18,7 @@ object WorkoutSync {
     }
 
     fun notifyWorkoutChanged() {
+        changes.incrementAndGet()
         listeners.forEach { listener ->
             try {
                 listener()
