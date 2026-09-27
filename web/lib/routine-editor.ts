@@ -5,6 +5,7 @@ export function renderRoutineEditor(options: {
   calendarHref: string;
   slug: string;
   signedIn?: boolean;
+  accessToken?: string;
 }): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -114,7 +115,7 @@ export function renderRoutineEditor(options: {
     const API_BASE = ${JSON.stringify(options.apiBase)};
     const TOKEN_KEY = ${JSON.stringify(`gb_token_${options.slug}`)};
     const signedIn = ${options.signedIn === true ? "true" : "false"};
-    let token = sessionStorage.getItem(TOKEN_KEY) || "";
+    let token = ${JSON.stringify(options.accessToken ?? "")} || sessionStorage.getItem(TOKEN_KEY) || "";
     let authRequired = false;
     let versions = [];
     let currentId = null;

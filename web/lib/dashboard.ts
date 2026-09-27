@@ -32,6 +32,7 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gym Buddy</title>
   <meta name="gb-profile" content="${escapeHtml(options.displayName)}" />
+  <meta name="referrer" content="no-referrer" />
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }

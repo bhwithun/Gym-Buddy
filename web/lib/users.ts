@@ -8,6 +8,7 @@ export type Profile = {
   id: string;
   displayName: string;
   tokenHash: string;
+  shareTokenHash: string | null;
 };
 
 export function newToken(): string {
@@ -24,6 +25,19 @@ export function tokenMatches(token: string, hash: string): boolean {
   const expected = Buffer.from(hash, "hex");
   if (provided.length !== expected.length) return false;
   return timingSafeEqual(provided, expected);
+}
+
+export function acceptsToken(token: string, profile: Profile): boolean {
+  if (tokenMatches(token, profile.tokenHash)) return true;
+  return Boolean(profile.shareTokenHash && tokenMatches(token, profile.shareTokenHash));
+}
+
+export function queryToken(request: Request): string {
+  try {
+    return new URL(request.url).searchParams.get("token")?.trim() ?? "";
+  } catch {
+    return "";
+  }
 }
 
 const PROFILE_COOKIE = "gb_profiles";
@@ -108,7 +122,7 @@ export async function getProfile(slug: string): Promise<Profile | null> {
   await ready();
   if (!SLUG_RE.test(slug)) return null;
   const rows = await sql()`
-    SELECT id, display_name, token_hash FROM users WHERE id = ${slug}
+    SELECT id, display_name, token_hash, share_token_hash FROM users WHERE id = ${slug}
   `;
   const row = rows[0];
   if (!row) return null;
@@ -116,6 +130,7 @@ export async function getProfile(slug: string): Promise<Profile | null> {
     id: String(row.id),
     displayName: String(row.display_name),
     tokenHash: String(row.token_hash),
+    shareTokenHash: row.share_token_hash ? String(row.share_token_hash) : null,
   };
 }
 
@@ -125,8 +140,8 @@ export async function requireProfile(
 ): Promise<{ ok: true; profile: Profile } | { ok: false; response: Response }> {
   const profile = await getProfile(slug);
   if (!profile) return { ok: false, response: json({ error: "not found" }, 404) };
-  const token = bearerToken(request) || browserToken(request, profile.id);
-  if (!tokenMatches(token, profile.tokenHash)) {
+  const token = bearerToken(request) || queryToken(request) || browserToken(request, profile.id);
+  if (!acceptsToken(token, profile)) {
     return { ok: false, response: json({ error: "unauthorized" }, 401) };
   }
   return { ok: true, profile };
@@ -135,8 +150,8 @@ export async function requireProfile(
 export async function openProfile(request: Request, slug: string): Promise<Profile | null> {
   const profile = await getProfile(slug);
   if (!profile) return null;
-  const token = bearerToken(request) || browserToken(request, profile.id);
-  if (!tokenMatches(token, profile.tokenHash)) return null;
+  const token = bearerToken(request) || queryToken(request) || browserToken(request, profile.id);
+  if (!acceptsToken(token, profile)) return null;
   return profile;
 }
 
@@ -146,7 +161,7 @@ export async function rememberedProfiles(
   const found: { slug: string; displayName: string }[] = [];
   for (const entry of readBrowserProfiles(request)) {
     const profile = await getProfile(entry.slug);
-    if (profile && tokenMatches(entry.token, profile.tokenHash)) {
+    if (profile && acceptsToken(entry.token, profile)) {
       found.push({ slug: profile.id, displayName: profile.displayName });
     }
   }

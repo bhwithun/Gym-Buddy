@@ -1,6 +1,6 @@
 import { renderDashboard, type DashboardView } from "../../../lib/dashboard";
 import { html, json, run } from "../../../lib/http";
-import { openProfile, renderPrivate } from "../../../lib/users";
+import { acceptsToken, openProfile, queryToken, renderPrivate, withProfileCookie } from "../../../lib/users";
 import { loadWorkoutIndex } from "../../../lib/workouts";
 
 export const dynamic = "force-dynamic";
@@ -16,13 +16,22 @@ export function GET(request: Request, context: Context) {
     const view: DashboardView =
       requested === "log" || requested === "totals" || requested === "averages" ? requested : "all";
     const index = await loadWorkoutIndex(profile.id);
-    return html(
+    const token = queryToken(request);
+    const routinePath =
+      token && acceptsToken(token, profile)
+        ? `/u/${profile.id}/routine?token=${encodeURIComponent(token)}`
+        : `/u/${profile.id}/routine`;
+    let response = html(
       renderDashboard(index, {
         displayName: profile.displayName,
-        routinePath: `/u/${profile.id}/routine`,
+        routinePath,
         view,
       }),
     );
+    if (token && acceptsToken(token, profile)) {
+      response = withProfileCookie(response, request, profile.id, token);
+    }
+    return response;
   });
 }
 

@@ -1,6 +1,6 @@
 import { html, json, run } from "../../../../lib/http";
 import { renderRoutineEditor } from "../../../../lib/routine-editor";
-import { openProfile, renderPrivate } from "../../../../lib/users";
+import { acceptsToken, openProfile, queryToken, renderPrivate, withProfileCookie } from "../../../../lib/users";
 
 export const dynamic = "force-dynamic";
 
@@ -11,14 +11,21 @@ export function GET(request: Request, context: Context) {
     const { slug: raw } = await context.params;
     const profile = await openProfile(request, decodeURIComponent(raw));
     if (!profile) return html(renderPrivate());
-    return html(
+    const token = queryToken(request);
+    const accessToken = token && acceptsToken(token, profile) ? token : "";
+    let response = html(
       renderRoutineEditor({
         apiBase: `/u/${profile.id}`,
-        calendarHref: `/u/${profile.id}`,
+        calendarHref: accessToken
+          ? `/u/${profile.id}?token=${encodeURIComponent(accessToken)}`
+          : `/u/${profile.id}`,
         slug: profile.id,
         signedIn: true,
+        accessToken,
       }),
     );
+    if (accessToken) response = withProfileCookie(response, request, profile.id, accessToken);
+    return response;
   });
 }
 

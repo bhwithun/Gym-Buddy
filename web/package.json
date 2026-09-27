@@ -6,7 +6,8 @@
     "build": "next build",
     "start": "next start",
     "import:cloudflare": "node scripts/import-cloudflare.mjs",
-    "claim-owner": "node --experimental-strip-types scripts/claim-owner.ts"
+    "claim-owner": "node --experimental-strip-types scripts/claim-owner.ts",
+    "share-link": "node --experimental-strip-types scripts/share-link.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
