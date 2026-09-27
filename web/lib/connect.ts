@@ -1,4 +1,4 @@
-import QRCode from "qrcode";
+import { renderDotQr } from "./dot-qr";
 import { escapeHtml } from "./http";
 
 export async function renderConnect(options: {
@@ -10,7 +10,7 @@ export async function renderConnect(options: {
   const profilePath = `/u/${encodeURIComponent(options.slug)}`;
   const connectUrl = `${options.origin}${profilePath}?token=${encodeURIComponent(options.token)}`;
   const calendarUrl = `${options.origin}${profilePath}`;
-  const qr = await QRCode.toDataURL(connectUrl, { margin: 1, width: 320, errorCorrectionLevel: "M" });
+  const qr = renderDotQr(connectUrl);
   const rotateAction = `${profilePath}/connect?token=${encodeURIComponent(options.token)}`;
   return `<!DOCTYPE html>
 <html lang="en">
@@ -27,7 +27,8 @@ export async function renderConnect(options: {
     h1 { color: #f9f72e; font-size: 32px; margin: 0 0 8px; }
     a { color: #00ffff; }
     p { line-height: 1.5; }
-    img { width: min(320px, 100%); height: auto; background: #fff; border-radius: 12px; padding: 8px; }
+    .qr { width: min(320px, 100%); height: auto; background: #fff; border-radius: 16px; display: block; }
+    .qr circle { fill: #121212; }
     code, input { font-family: ui-monospace, monospace; font-size: 13px; }
     input { width: 100%; margin-top: 8px; background: #121212; color: #eee; border: 1px solid #555; border-radius: 8px; padding: 10px 12px; }
     button { margin-top: 16px; background: #2a2a2a; color: #f9f72e; border: 1px solid #555; border-radius: 10px; padding: 10px 14px; font: inherit; cursor: pointer; }
@@ -38,7 +39,7 @@ export async function renderConnect(options: {
   <main>
     <h1>${escapeHtml(options.displayName)}</h1>
     <p>Install Gym Buddy from the <a href="https://github.com/bhwithun/Gym-Buddy/releases/latest">latest GitHub release</a>. In the app, open About and tap <strong>Scan profile</strong>, then point the camera at this code.</p>
-    <p><img src="${qr}" alt="Profile QR code" /></p>
+    <p>${qr.replace("<svg ", '<svg class="qr" ')}</p>
     <p>The code connects this phone to <a href="${escapeHtml(calendarUrl)}">${escapeHtml(calendarUrl)}</a>.</p>
     <p class="hint">Bookmark the calendar link above. It does not include your token. Anyone with that link can view the calendar. The token is what lets the app push workouts and change routines.</p>
     <p>For the routine editor on a computer, open <a href="${escapeHtml(profilePath)}/routine">Edit routines</a> and paste this token:</p>
