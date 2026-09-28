@@ -38,10 +38,32 @@ export async function renderConnect(options: {
 <body>
   <main>
     <h1>${escapeHtml(options.displayName)}</h1>
-    <p>Install Gym Buddy from the <a href="https://github.com/bhwithun/Gym-Buddy/releases/latest">latest GitHub release</a>. In the app, open About and tap <strong>Scan profile</strong>, then point the camera at this code.</p>
+    <p>Install Gym Buddy from the <a href="https://github.com/bhwithun/Gym-Buddy/releases/latest">latest GitHub release</a>. If this code is on another screen, open About in the app and tap <strong>Scan profile</strong>.</p>
     <p>${qr.replace("<svg ", '<svg class="qr" ')}</p>
-    <p>This browser can now open <a href="${escapeHtml(calendarUrl)}">your profile</a>. Log, stats, and routines are tabs on that page. Come back any time from <a href="/">the Gym Buddy home page</a>. Other people cannot open them.</p>
-    <p class="hint">Scan the code with the phone. You do not need to copy a token.</p>
+    <p>On this same phone, the camera cannot see the code. Tap <strong>Copy profile address</strong>. Then open Gym Buddy, go to About, tap <strong>Enter the address manually</strong>, and paste into <strong>Profile address</strong>. Tap <strong>Copy token</strong> and paste that into <strong>Profile token</strong>. Tap <strong>Save profile</strong>.</p>
+    <button type="button" id="copyAddress">Copy profile address</button>
+    <button type="button" id="copyToken">Copy token</button>
+    <p class="hint" id="copyStatus"></p>
+    <p>This browser can now open <a href="${escapeHtml(calendarUrl)}">your profile</a>. Log, stats, and routines are tabs on that page. Come back any time from <a href="/">the Gym Buddy home page</a>.</p>
+    <script>
+      var address = ${JSON.stringify(calendarUrl)};
+      var secret = ${JSON.stringify(options.token)};
+      function copyText(value, message) {
+        var status = document.getElementById("copyStatus");
+        function done() { status.textContent = message; }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(value).then(done).catch(function () { done("Select and copy: " + value); });
+        } else {
+          done("Select and copy: " + value);
+        }
+      }
+      document.getElementById("copyAddress").onclick = function () {
+        copyText(address, "Address copied. Paste it into About → Profile address.");
+      };
+      document.getElementById("copyToken").onclick = function () {
+        copyText(secret, "Token copied. Paste it into About → Profile token, then tap Save profile.");
+      };
+    </script>
     <form method="post" action="${escapeHtml(rotateAction)}">
       <button type="submit">Create a new token</button>
     </form>
