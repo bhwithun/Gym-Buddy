@@ -59,8 +59,15 @@
     <string name="about_stats_loading">Loading gym stats…</string>
     <string name="about_stats_failed">Couldn\'t load gym stats</string>
     <string name="about_credits">Made on Earth by Brian</string>
-    <string name="routine_backup">Backup</string>
-    <string name="routine_restore">Restore</string>
+    <string name="update_ready">Version %1$s is ready</string>
+    <string name="update_later">Later</string>
+    <string name="update_install">Install</string>
+    <string name="update_install_link">Install update</string>
+    <string name="update_downloading">Downloading update…</string>
+    <string name="update_failed">The update did not install</string>
+    <string name="update_allow">Allow Gym Buddy to install updates, then tap Install again.</string>
+    <string name="routine_backup">Push</string>
+    <string name="routine_restore">Pull</string>
     <string name="routine_edit_on_pc">Edit on PC</string>
     <string name="routine_backup_title">Backup routine</string>
     <string name="routine_backup_message">Upload this phone\'s routine to your profile? It replaces the routine stored there.</string>

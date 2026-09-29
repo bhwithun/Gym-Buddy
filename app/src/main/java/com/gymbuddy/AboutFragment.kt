@@ -16,6 +16,7 @@ import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.LinearLayout
@@ -50,6 +51,14 @@ private class ProfileShareBridge(private val fragment: AboutFragment) {
 }
 
 class AboutFragment : Fragment() {
+
+    companion object {
+        private const val ARG_SHOW_LOG = "show_log"
+
+        fun showingLog(): AboutFragment = AboutFragment().apply {
+            arguments = Bundle().apply { putBoolean(ARG_SHOW_LOG, true) }
+        }
+    }
 
     private var _binding: FragmentAboutBinding? = null
     private val binding get() = _binding!!
@@ -92,6 +101,10 @@ class AboutFragment : Fragment() {
         val packageInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
         binding.versionText.text = "Version ${packageInfo.versionName}"
         binding.creditsText.text = coloredCredits(getString(R.string.about_credits))
+        binding.updateLink.setOnClickListener {
+            val offer = AppUpdate.offer(requireContext()) ?: return@setOnClickListener
+            AppUpdate.startInstall(requireActivity(), offer)
+        }
 
         binding.statsWeb.setBackgroundColor(Color.parseColor("#121212"))
         binding.statsWeb.settings.javaScriptEnabled = true
@@ -139,11 +152,23 @@ class AboutFragment : Fragment() {
                 binding.workerTokenInput.text.toString()
             )
         }
+        renderUpdateOffer()
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(binding.statsWeb, true)
         binding.workerUrlInput.setText(WorkerRemote.getUrl(requireContext()) ?: "")
         binding.workerTokenInput.setText(WorkerRemote.getToken(requireContext()) ?: "")
         renderConnection()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        renderUpdateOffer()
+    }
+
+    fun renderUpdateOffer() {
+        val binding = _binding ?: return
+        binding.updateLink.visibility =
+            if (AppUpdate.offer(requireContext()) == null) View.GONE else View.VISIBLE
     }
 
     private fun saveProfile(url: String, token: String) {
@@ -213,9 +238,11 @@ class AboutFragment : Fragment() {
     }
 
     private fun loadStats(url: String) {
-        val target = "$url/?app=1"
+        val showLog = arguments?.getBoolean(ARG_SHOW_LOG) == true
+        val target = if (showLog) "$url/?app=1&tab=log" else "$url/?app=1"
         if (loadedStatsUrl == target) return
         loadedStatsUrl = target
+        if (showLog) binding.statsWeb.settings.cacheMode = WebSettings.LOAD_NO_CACHE
         binding.statsStatus.visibility = View.VISIBLE
         binding.statsStatus.setText(R.string.about_stats_loading)
         val token = WorkerRemote.getToken(requireContext())

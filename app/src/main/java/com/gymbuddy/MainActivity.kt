@@ -8,6 +8,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.gson.Gson
@@ -26,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_OPEN_WORKOUT = "com.gymbuddy.OPEN_WORKOUT"
         const val EXTRA_EXERCISE_INDEX = "com.gymbuddy.EXERCISE_INDEX"
+        const val EXTRA_OPEN_ABOUT = "com.gymbuddy.OPEN_ABOUT"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,7 +87,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.navigation_routine -> replaceFragment(RoutineFragment())
                 R.id.navigation_workout -> replaceFragment(workoutFragmentFromIntent())
                 R.id.navigation_protein -> replaceFragment(ProteinFragment())
-                R.id.navigation_about -> replaceFragment(AboutFragment())
+                R.id.navigation_about -> replaceFragment(aboutFragmentFromIntent())
             }
             if (item.itemId != R.id.navigation_workout) {
                 StandardRoutineOffer.maybeCheck(this)
@@ -95,6 +97,8 @@ class MainActivity : AppCompatActivity() {
 
         if (intent.getBooleanExtra(EXTRA_OPEN_WORKOUT, false)) {
             binding.bottomNavigation.selectedItemId = R.id.navigation_workout
+        } else if (intent.getBooleanExtra(EXTRA_OPEN_ABOUT, false)) {
+            binding.bottomNavigation.selectedItemId = R.id.navigation_about
         } else if (savedInstanceState == null) {
             replaceFragment(RoutineFragment())
         }
@@ -103,6 +107,22 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         StandardRoutineOffer.onActivityStarted(this)
+        AppUpdate.refreshAsync(this) { offer ->
+            supportFragmentManager.fragments.filterIsInstance<AboutFragment>().firstOrNull()
+                ?.renderUpdateOffer()
+            if (offer != null && AppUpdate.shouldPrompt(this, offer)) {
+                AppUpdate.markPrompted(offer)
+                MaterialAlertDialogBuilder(this)
+                    .setMessage(getString(R.string.update_ready, offer.versionName))
+                    .setNegativeButton(R.string.update_later) { _, _ ->
+                        AppUpdate.dismiss(this, offer.versionName)
+                    }
+                    .setPositiveButton(R.string.update_install) { _, _ ->
+                        AppUpdate.startInstall(this, offer)
+                    }
+                    .show()
+            }
+        }
     }
 
     override fun onStop() {
@@ -122,7 +142,19 @@ class MainActivity : AppCompatActivity() {
             } else {
                 binding.bottomNavigation.selectedItemId = R.id.navigation_workout
             }
+        } else if (intent.getBooleanExtra(EXTRA_OPEN_ABOUT, false)) {
+            if (binding.bottomNavigation.selectedItemId == R.id.navigation_about) {
+                replaceFragment(aboutFragmentFromIntent())
+            } else {
+                binding.bottomNavigation.selectedItemId = R.id.navigation_about
+            }
         }
+    }
+
+    private fun aboutFragmentFromIntent(): AboutFragment {
+        val showLog = intent.getBooleanExtra(EXTRA_OPEN_ABOUT, false)
+        if (showLog) intent.removeExtra(EXTRA_OPEN_ABOUT)
+        return if (showLog) AboutFragment.showingLog() else AboutFragment()
     }
 
     private fun workoutFragmentFromIntent(): WorkoutFragment {

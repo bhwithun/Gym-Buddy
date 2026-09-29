@@ -1,5 +1,6 @@
 package com.gymbuddy
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -132,8 +133,7 @@ class WorkoutSummaryActivity : AppCompatActivity(), DurationEditorDialogFragment
             runOnUiThread {
                 if (isFinishing) return@runOnUiThread
                 if (result.isSuccess) {
-                    WorkerRemote.openDashboard(this)
-                    close()
+                    closeToAboutLog()
                 } else {
                     binding.pushButton.isEnabled = true
                     binding.pushButton.setText(R.string.summary_push)
@@ -145,6 +145,15 @@ class WorkoutSummaryActivity : AppCompatActivity(), DurationEditorDialogFragment
 
     private fun close() {
         WorkoutClock.markPresented(this)
+        finish()
+    }
+
+    private fun closeToAboutLog() {
+        WorkoutClock.markPresented(this)
+        startActivity(Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            putExtra(MainActivity.EXTRA_OPEN_ABOUT, true)
+        })
         finish()
     }
 
