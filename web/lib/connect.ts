@@ -1,5 +1,6 @@
 import { renderDotQr } from "./dot-qr";
 import { escapeHtml } from "./http";
+import { revisionMark } from "./revision";
 
 export async function renderConnect(options: {
   origin: string;
@@ -36,6 +37,7 @@ export async function renderConnect(options: {
   </style>
 </head>
 <body>
+  ${revisionMark()}
   <main>
     <h1>${escapeHtml(options.displayName)}</h1>
     <p>Install Gym Buddy from the <a href="https://github.com/bhwithun/Gym-Buddy/releases/latest">latest GitHub release</a>. If this code is on another screen, open About in the app and tap <strong>Scan profile</strong>.</p>

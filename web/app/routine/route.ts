@@ -1,4 +1,5 @@
 import { html, run } from "../../lib/http";
+import { revisionMark } from "../../lib/revision";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export function GET(request: Request) {
   <title>Gym Buddy</title>
 </head>
 <body style="margin:0;background:#121212;color:#eee;font-family:ui-sans-serif,system-ui,sans-serif">
+  ${revisionMark()}
   <main style="max-width:640px;margin:0 auto;padding:32px 16px">
     <h1 style="color:#f9f72e">Routines live on your profile</h1>
     <p>Open the calendar link from your connect page, then choose Edit routines. <a style="color:#00ffff" href="/">Back to Gym Buddy</a></p>

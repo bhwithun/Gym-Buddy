@@ -1,5 +1,6 @@
 import { escapeHtml } from "./http";
 import { renderRoutineEditor } from "./routine-editor";
+import { revisionMark } from "./revision";
 
 export type IndexEntry = {
   date: string;
@@ -113,6 +114,7 @@ export function renderDashboard(index: IndexEntry[], options: DashboardOptions):
   </style>
 </head>
 <body class="${bodyClass}"${options.lockTab ? ` data-lock="${options.lockTab}"` : ""}>
+  ${revisionMark()}
   <header class="top">
     <a class="brand" href="/">
       <svg class="plate" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#5B2C6F" stroke="#f9f72e" stroke-width="2"/><circle cx="16" cy="16" r="5" fill="#121212"/></svg>

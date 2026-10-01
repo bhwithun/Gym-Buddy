@@ -1,6 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { ready, sql } from "./db";
 import { json } from "./http";
+import { revisionMark } from "./revision";
 
 export const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
@@ -113,6 +114,7 @@ export function renderPrivate(): string {
   <title>Gym Buddy</title>
 </head>
 <body style="margin:0;background:#121212;color:#eee;font-family:ui-sans-serif,system-ui,sans-serif">
+  ${revisionMark()}
   <main style="max-width:640px;margin:0 auto;padding:32px 16px">
     <h1 style="color:#f9f72e">Private</h1>
     <p>Open <a style="color:#00ffff" href="/">gym.brianandkathi.com</a> in this browser. Your profile is listed there after you have opened its connect page once.</p>

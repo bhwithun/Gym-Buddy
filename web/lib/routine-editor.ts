@@ -1,4 +1,5 @@
 import { escapeHtml } from "./http";
+import { revisionMark } from "./revision";
 
 export function renderRoutineEditor(options: {
   apiBase: string;
@@ -375,6 +376,7 @@ export function renderRoutineEditor(options: {
   <title>Gym Buddy routines</title>
 </head>
 <body style="margin:0;background:#121212;font-family:ui-sans-serif,system-ui,sans-serif">
+${revisionMark()}
 ${body}
 </body>
 </html>`;

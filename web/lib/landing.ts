@@ -1,4 +1,5 @@
 import { escapeHtml } from "./http";
+import { revisionMark } from "./revision";
 
 const RELEASES = "https://github.com/bhwithun/Gym-Buddy/releases/latest";
 
@@ -56,6 +57,7 @@ export function renderLanding(
   </style>
 </head>
 <body>
+  ${revisionMark()}
   <main>
     <h1>Gym Buddy</h1>
     <p>An Android app for the week's routine, logging sets as you lift, protein for the day, and a home-screen exercise widget.</p>
