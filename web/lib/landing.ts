@@ -2,6 +2,23 @@ import { escapeHtml } from "./http";
 
 const RELEASES = "https://github.com/bhwithun/Gym-Buddy/releases/latest";
 
+const TRASH_ICON =
+  '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M9 3h6l1 2h5v2H3V5h5l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9z"/></svg>';
+
+function renderProfileRow(profile: { slug: string; displayName: string }): string {
+  const name = escapeHtml(profile.displayName);
+  const slug = escapeHtml(profile.slug);
+  const confirmText = escapeHtml(
+    `Delete ${profile.displayName}? This removes the gym log and the routine.`,
+  );
+  return `<div class="profile">
+    <p><strong>${name}</strong><br><a href="/u/${slug}?tab=log">Log</a> · <a href="/u/${slug}?tab=stats">Stats</a> · <a href="/u/${slug}?tab=routines">Routines</a></p>
+    <form method="post" action="/users/${slug}/delete" data-confirm="${confirmText}" onsubmit="return confirm(this.dataset.confirm)">
+      <button type="submit" class="trash" aria-label="Delete ${name}" title="Delete ${name}">${TRASH_ICON}</button>
+    </form>
+  </div>`;
+}
+
 export function renderLanding(
   error = "",
   profiles: { slug: string; displayName: string }[] = [],
@@ -30,6 +47,11 @@ export function renderLanding(
     button { margin-top: 16px; background: #5B2C6F; color: #fff; border: 0; border-radius: 10px; padding: 12px 16px; font: inherit; cursor: pointer; }
     .hint { color: #9e9e9e; font-size: 14px; }
     .status.err { color: #ff8a9a; }
+    .profile { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .profile p { margin: 8px 0; }
+    .profile form { margin: 0; }
+    .profile button.trash { margin: 0; background: transparent; color: #ff3b30; border-radius: 8px; padding: 8px; line-height: 0; }
+    .profile button.trash:hover { background: #3a1212; color: #ff6b63; }
     .download { display: inline-block; margin-top: 8px; background: #14331c; border: 1px solid #00aa44; color: #e8ffe8; border-radius: 10px; padding: 12px 16px; text-decoration: none; }
   </style>
 </head>
@@ -40,12 +62,7 @@ export function renderLanding(
     <p>Each person gets their own gym calendar and one routine. The phone stores workouts on the device. Cloud backup starts after you connect a profile.</p>
     ${
       profiles.length
-        ? `<div class="card"><h2>Your profiles</h2>${profiles
-            .map(
-              (profile) =>
-                `<p><strong>${escapeHtml(profile.displayName)}</strong><br><a href="/u/${escapeHtml(profile.slug)}?tab=log">Log</a> · <a href="/u/${escapeHtml(profile.slug)}?tab=stats">Stats</a> · <a href="/u/${escapeHtml(profile.slug)}?tab=routines">Routines</a></p>`,
-            )
-            .join("")}</div>`
+        ? `<div class="card"><h2>Your profiles</h2>${profiles.map(renderProfileRow).join("")}</div>`
         : ""
     }
     <p><a class="download" href="${RELEASES}">Download the latest release</a></p>

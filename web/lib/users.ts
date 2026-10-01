@@ -76,6 +76,18 @@ export function browserToken(request: Request, slug: string): string {
   return readBrowserProfiles(request).find((profile) => profile.slug === slug)?.token ?? "";
 }
 
+function writeProfileCookie(response: Response, request: Request, profiles: BrowserProfile[]): Response {
+  const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  const value = encodeURIComponent(profiles.map((profile) => `${profile.slug}.${profile.token}`).join(","));
+  const maxAge = profiles.length === 0 ? 0 : 31536000;
+  const headers = new Headers(response.headers);
+  headers.append(
+    "Set-Cookie",
+    `${PROFILE_COOKIE}=${value}; HttpOnly; Path=/; Max-Age=${maxAge}; SameSite=Lax${secure}`,
+  );
+  return new Response(response.body, { status: response.status, headers });
+}
+
 export function withProfileCookie(
   response: Response,
   request: Request,
@@ -84,14 +96,12 @@ export function withProfileCookie(
 ): Response {
   const profiles = readBrowserProfiles(request).filter((profile) => profile.slug !== slug);
   profiles.push({ slug, token });
-  const value = encodeURIComponent(profiles.map((profile) => `${profile.slug}.${profile.token}`).join(","));
-  const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
-  const headers = new Headers(response.headers);
-  headers.append(
-    "Set-Cookie",
-    `${PROFILE_COOKIE}=${value}; HttpOnly; Path=/; Max-Age=31536000; SameSite=Lax${secure}`,
-  );
-  return new Response(response.body, { status: response.status, headers });
+  return writeProfileCookie(response, request, profiles);
+}
+
+export function withoutProfileCookie(response: Response, request: Request, slug: string): Response {
+  const profiles = readBrowserProfiles(request).filter((profile) => profile.slug !== slug);
+  return writeProfileCookie(response, request, profiles);
 }
 
 export function renderPrivate(): string {
@@ -210,4 +220,17 @@ export async function rotateToken(slug: string): Promise<string | null> {
 
 export function connectPath(slug: string, token: string): string {
   return `/u/${encodeURIComponent(slug)}/connect?token=${encodeURIComponent(token)}`;
+}
+
+export async function deleteProfile(slug: string): Promise<boolean> {
+  await ready();
+  if (!SLUG_RE.test(slug)) return false;
+  const db = sql();
+  const results = await db.transaction((txn) => [
+    txn`DELETE FROM workouts WHERE user_id = ${slug}`,
+    txn`DELETE FROM routines WHERE user_id = ${slug}`,
+    txn`DELETE FROM users WHERE id = ${slug} RETURNING id`,
+  ]);
+  const removed = results[2];
+  return Array.isArray(removed) && removed.length > 0;
 }

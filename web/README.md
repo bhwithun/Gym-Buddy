@@ -34,6 +34,7 @@ Profile base: `https://gym.brianandkathi.com/u/<slug>`
 |--------|------|---------|
 | `GET` | `/` | Intro, download link, create-profile form |
 | `POST` | `/users` | Create a profile. Form post redirects to the connect page. JSON body `{ "displayName", "slug" }` returns `connectUrl`. |
+| `POST` | `/users/:slug/delete` | Delete that profile, its workouts, and its routine. The request must carry that profile's token. |
 | `GET` | `/u/:slug` | That person’s calendar (HTML) |
 | `GET` | `/u/:slug/routine` | Routine editor (HTML; APIs need the token) |
 | `GET` | `/u/:slug/connect?token=` | QR and token. Wrong or missing token is not found. |
